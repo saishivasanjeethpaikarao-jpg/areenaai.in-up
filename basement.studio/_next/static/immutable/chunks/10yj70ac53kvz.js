@@ -1,0 +1,4 @@
+;!function(){try { var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof global?global:"undefined"!=typeof window?window:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&((e._debugIds|| (e._debugIds={}))[n]="2b6571a0-148d-06d8-0a4e-cfb6936e9704")}catch(e){}}();
+(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,699809,e=>{"use strict";var t=e.i(539895),s=e.i(136746),u=e.i(729431);e.s(["LabClient",0,()=>{let e=(0,t.useRouter)(),a=(0,u.useAppLoadingStore)(e=>e.canvasUnavailable);return(0,s.useEffect)(()=>{a&&e.push("https://lab.basement.studio/")},[a,e]),null}])}]);
+
+//# debugId=2b6571a0-148d-06d8-0a4e-cfb6936e9704

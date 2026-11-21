@@ -1,0 +1,312 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="download_date" content="2026-11-21T07:57:28.815Z"/></head><body># Migrating Large-Scale Websites From Gatsby to Next.js
+
+**Author:** Julian Benegas
+**Published:** 2/9/2023
+**Categories:** Development
+
+---
+
+We helped a dev team get better DX, faster build times, and versatile APIs. They can move faster than ever now.
+
+Why migrate a perfectly functioning website from Gatsby to Next.js? Will the end user benefit from all this, or is it just to satisfy the development team?” Those were some of the questions we had before starting this project.
+
+With more than 30 static pages, around 600 dynamic pages, and 15 language translations for all of those, [solana.com](http://solana.com) was filled with plugins and escape hatches, and unbearable build times. The more we talked with Solana Devs, the more we agreed on this: that better DX, faster build times, and versatile APIs would put developers in a “pit of success” that would lead to faster iteration cycles and a better website for end users.
+
+And so we took on the ambitious project of migrating [solana.com](http://solana.com) from Gatsby to Next.js, in the shortest amount of time possible—as the Solana Dev Team also needed to ship new features.
+
+## Thinking in Next.js
+
+When starting a migration from Gatsby to Next.js, there are a couple of things to consider. We must get into “thinking in Next.js” (ode to the famous [Thinking in React](https://reactjs.org/docs/thinking-in-react.html#gatsby-focus-wrapper)).
+
+Next.js is a full-stack framework.
+
+At the surface, it provides developers with APIs that unlock several rendering strategies—SSR, SSG, ISR; wraps basic web primitives such as images, links, scripts, and fonts with well-thought-out abstractions, and makes working with React and every styling solution you’d want a bliss.
+
+At a deeper level, it provides ways of handling different edge cases that may arise seamlessly. And that leads us to one of the critical differences between Next.js and Gatsby: how they approach extensibility.
+
+## Extensibility
+
+Next.js provides developers with primitives that can be adapted to any use case, whereas Gatsby—while it still offers many built-in primitives—tends to suggest a plugin for almost everything.
+
+This means that if you want to add a new feature to a Gatsby site, you’ll likely need to find and install a plugin that provides that feature. This can make it easier to start, but it can also make it harder to customize your site to meet specific needs. Let's explore an example:
+
+### Image Optimization
+
+Optimizing images is a critical step to take to build a lean and performant website.
+
+- How does Gatsby solve image optimization? You will need the `gatsby-plugin-image` plugin. To make that work, you will also need `gatsby-plugin-sharp`. Additionally, install&nbsp;`gatsby-source-filesystem`&nbsp;if you are using static images and&nbsp;`gatsby-transformer-sharp`&nbsp;in case you use dynamic ones.
+- How does Next.js solve image optimization? Just `import Image from 'next/image'`.
+
+This is how you’d do image optimization for each framework:
+
+**Gatsby**
+
+**code**
+
+```bash
+yarn add gatsby-plugin-image gatsby-plugin-sharp gatsby-source-filesystem gatsby-transformer-sharp
+```
+
+**code**
+
+```javascript
+// gatsby.config.js
+module.exports = {
+  plugins: [
+    `gatsby-plugin-image`,
+    `gatsby-plugin-sharp`,
+    `gatsby-transformer-sharp`, // Needed for dynamic images
+  ],
+}
+```
+
+**Next.js**
+
+**code**
+
+```javascript
+// component.jsx
+import Image from 'next/image'
+import demoSrc from '~/public/demo.png'
+
+() =&gt; {
+  return <img src="https://basement.studio/post/%7BdemoSrc%7D" quality="{90}" placeholder="blur">
+}
+```
+
+That’s a big difference. Thirty-one lines of code, plus three npm packages, versus just seven lines of code.
+
+Additionally, Next.js’ Image component allows the developer to tweak how the image will load and look by just passing props into it. This declarative and colocated approach scales really well and makes the codebase super easy to understand.
+
+When migrating [solana.com](http://solana.com), images were not as much work as you’d think. It was mainly deleting code and checking styles that didn’t break.
+
+### Fetching Remote Data
+
+Every big website, at some point, needs to get remote data from somewhere. This was certainly the case for [solana.com](http://solana.com), which read data from:
+
+- Ghost to get blog posts
+- YouTube to get the latest videos from the Solana YT channel
+- GitHub to get information about the [Solana repo](https://github.com/solana-labs/solana)
+
+In Gatsby, for each data source, we’d use a different plugin. For Ghost, we’d use `gatsby-source-ghost` and `gatsby-plugin-ghost-images`. For YouTube, we’d use `gatsby-source-youtube-v3`. For GitHub, we’d use `gatsby-source-custom-api`. These were four different dependencies, which needed to be understood by the developer and consumed in different ways across the application.
+
+In Next.js, we simply `fetch`ed data from wherever and passed the data down via `getStaticProps`. Solana developers now don’t need to go through different plugin documentations, explore various files, and do lots of `cmd + shift + F` (global searches), just to understand how the data gets to the UI: now they just see the data being fetched on the spot and then passed down via props (a common pattern for React developers).
+
+Again, let’s look at a practical code example taken from the Solana repository:
+
+**Gatsby**
+
+**code**
+
+```bash
+yarn add gatsby-source-custom-api
+```
+
+**code**
+
+```javascript
+// gatsby-config.js
+module.exports = {
+  plugins: [
+    {
+      resolve: "gatsby-source-custom-api",
+      options: {
+        rootKey: "github",
+        url: "<https: api.github.com="" repos="" solana-labs="" solana="">",
+        schemas: {
+          github: `stargazers_count: Int`,
+        },
+      },
+    },
+  ],
+}
+```
+
+**code**
+
+```javascript
+// gatsby-node.js
+exports.createPages = async ({ actions, graphql }) =&gt; {
+  const { createPage } = actions;
+
+  // Create Community pages
+
+  // 1. Fetch related data
+  const githubData = await graphql(`
+    {
+      github {
+        stargazers_count
+      }
+    }
+  `);
+
+  // 2. Create Community page
+  const communityPage = require.resolve(`./src/templates/community.js`);
+
+  createPage({
+    path: "community",
+    component: communityPage,
+    context: {
+      githubData: githubData.data.github,
+    },
+  });
+};
+```
+
+**code**
+
+```javascript
+// templates/community.jsx
+export default function ({ pageContext }) {
+  return (
+    <p>{pageContext.githubData.stargazers_count}</p>
+  );
+};
+```
+
+**Next.js**
+
+**code**
+
+```text
+// pages/community.jsx
+export default function ({ stargazers }) {
+  return <p>{stargazers}</p>
+}
+
+export const getStaticProps = async () =&gt; {
+  const res = await fetch("<https: api.github.com="" repos="" solana-labs="" solana="">", {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+  });
+  const jsonData = await res.json();
+  const stargazers = jsonData?.stargazers_count || 0;
+  
+  return {
+    props: {
+      stargazers
+    },
+    revalidate: 1
+  }  
+}
+```
+
+This is a real example, taken from [solana.com](http://solana.com) on Gatsby (left), and [solana.com](http://solana.com) on Next.js (right). Again, more than the diff in terms of the number of lines of code, the most important difference here is that in Gatsby, there are several layers you need to understand just to know how that `stargazers_count` reaches the UI (an npm package, `gatsby-config.js` → `gatsby-node.js` → render function). In the Next.js example, it’s all condensed into one file and two functions. Colocation is important for us, and Solana developers really enjoyed not having to deal with `gatsby-config` and `gatsby-node` stuff.
+
+Additionally, Gatsby forces all the data to pass through GraphQL, which gets really hard when dealing with remote APIs that do not expose a GraphQL endpoint. In Next.js, you can use GraphQL, `fetch`, or node’s `fs`... basically whatever you want.
+
+## Build Times
+
+One big issue we had with Solana in Gatsby was build times. We were circling 35-minute build times. That means, on every push, the Developer would need to wait half an hour (sometimes even more) just to share progress with coworkers. This made iteration cycles really slow, and therefore shipping new features was a drag.
+
+Let’s be fair: the site is big. At each build, we were creating close to 10k static pages (`(static + dynamic pages) * locales`). How could we go faster than this if we were not server rendering?
+
+Luckily, Next.js is very flexible. By taking a hybrid approach, generating the most important pages at build time, while not generating less frequently visited pages and localized ones, we could make builds much leaner. But how would we ensure that every page of the site remains fast? We’d use **I**ncremental **S**tatic **R**egeneration: the first time a user requests a page that’s not cached, the Vercel server would:
+
+1. generate the page and return the HTML + CSS + JS
+1. push the newly generated page to its CDN
+
+This means, yes, the first user would take a loading time hit by needing to go to the origin server, but subsequent users would get a fast response from the CDN! That was a tradeoff we were willing to make.
+
+Let’s look at how generating static pages works for both of these frameworks:
+
+**Gatsby**
+
+**code**
+
+```bash
+yarn add gatsby-source-filesystem
+```
+
+**code**
+
+```javascript
+// gatsby-node.js
+exports.createPages = async ({ actions }) =&gt; {
+  const ecosystemData = await fetchEcosystemDataViaGraphQL();
+
+  const ecosystemProjectTemplate = require.resolve(
+    `./src/templates/ecosystemProject.js`
+  );
+
+  // Create ecosystem partner pages.
+  ecosystemData.pages.forEach(({ node }) =&gt; {
+    actions.createPage({
+      path: `ecosystem/${node.frontmatter.slug}`,
+      component: ecosystemProjectTemplate,
+      context: {
+        slug: node.frontmatter.slug,
+        logline: node.frontmatter.logline,
+      },
+    });
+  });
+};
+```
+
+**code**
+
+```javascript
+// templates/ecosystemProject.jsx
+export default function EcosystemProjectTemplate(props) {
+  return <div>{...}</div>
+}
+```
+
+**Next.js**
+
+**code**
+
+```javascript
+\// pages/ecosystem/[slug].jsx
+export default function EcosystemPage(props) {
+  return <div>{...}</div>
+}
+
+// ————— Here ⬇️
+**// only pre-render `importantEcosystemPages`**
+export const getStaticPaths = async () =&gt; {
+  const importantEcosystemPages = await fetchMostImportantEcosystemPages();
+
+  return {
+    paths: importantEcosystemPages.map((p) =&gt; ({
+      params: { slug: node.frontmatter.slug },
+    })),
+    fallback: "blocking",
+  };
+};
+
+export const getStaticProps = async (ctx) =&gt; {
+  const data = await fetchEcosystemPageBySlug(ctx.params.slug);
+
+  return {
+    props: {
+      slug: data.slug,
+      logline: data.logline,
+    },
+    revalidate: 1,
+  };
+};
+```
+
+With this strategy, our build times went down from 35 minutes to just 5 minutes. Learn more about ISR [in the Next.js doc](https://nextjs.org/docs/basic-features/data-fetching/incremental-static-regeneration)[s](https://nextjs.org/docs/basic-features/data-fetching/incremental-static-regeneration).
+
+## Results
+
+Overall, migrating from Gatsby to Next.js was a great decision. The project took 3 weeks from start to finish. We moved fast to prevent blocking Solana Devs from shipping new features. Vercel Previews were key here, as we needed to test every single page we migrated to make sure we didn’t break anything. Those 5 minute build times Vercel was giving us made us really happy.
+
+Vercel Analytics showed us that the Real Experience Score improved from 79 to 90 points since we migrated. This gave us even more confidence to know that the project was successful.
+
+The Solana Team now knows that this architecture will scale as more and more users land on [solana.com](http://solana.com), and new features need to be built and shipped.
+
+## Related Posts
+
+- [From Experiment to Framework: The Road to xmcp v1](https://basement.studio/post/from-experiment-to-framework-the-road-to-xmcp-v1.md) — 2026-08-25
+- [The Making of Shader Lab](https://basement.studio/post/the-making-of-shader-lab.md) — 2026-05-01
+- [Whatever It Takes to Craft a Brand - Even a Long Flight](https://basement.studio/post/whatever-it-takes-to-craft-a-brand-even-a-long-flight.md) — 2025-07-15
+
+---
+
+[View all content](https://basement.studio/sitemap.md)</https:></https:></body>

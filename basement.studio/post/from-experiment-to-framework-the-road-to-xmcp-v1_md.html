@@ -1,0 +1,164 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="download_date" content="2026-11-21T07:57:28.815Z"/></head><body># From Experiment to Framework: The Road to xmcp v1
+
+**Author:** Valentina Bearzotti
+**Published:** 8/25/2026
+**Categories:** Development
+
+---
+
+What started as a simpler way to build MCP servers has grown into a production framework. With xmcp v1, the runtime is lighter, the architecture is clearer, and the framework speaks the latest revision of the protocol it was built for.
+
+When we started building xmcp, the Model Context Protocol was already opening up a new way for applications and models to work together. The protocol was exciting. The process of building with it? A little less so.
+
+Creating a TypeScript MCP server still meant spending time on registration, transports, bundling, configuration, and deployment before getting to the part that actually mattered: the tools you wanted to build.
+
+At basement, when a workflow repeatedly gets in the way of the work, we start looking for a better one. Sometimes that becomes an internal convention. Sometimes, after enough use and a few conversations that start with “wait, you built what?”, it becomes an open-source project. xmcp started there: as an attempt to make building an MCP server feel natural to a TypeScript developer.
+
+More than a year later, it has grown into something much broader. Nearly half a million downloads, more than 1,300 GitHub stars, dozens of integrations and examples, and—most importantly—a community building things with it that we never could have planned ourselves.
+
+Version 1.0 is where that journey arrives. Getting there took two steps: first a cleaner separation between what a server needs in order to be built and what it needs in order to run, and then an implementation of the protocol current enough to build the next year of work on.
+
+## Starting with the obvious things
+
+Our first goal was straightforward: remove setup without removing control.
+
+A tool should be a file. Its filename should give it a name. Its schema, metadata, and handler should live together. Adding it to a server should not require jumping into a central registry and wiring up another chain of imports. That became xmcp’s file-system routing.
+
+**Project structure**
+
+```text
+src/
+├── tools/
+│   └── search.ts
+├── prompts/
+│   └── summarize.ts
+└── resources/
+    └── (docs)/
+        └── [slug].ts
+```
+
+The framework discovers these files, registers them, watches them during development, and builds the server around them. You can bootstrap a project with one command, add a tool, and see it running without first becoming an expert in xmcp’s internals.
+
+We began with tools because they were the most immediate part of MCP. As the protocol and its clients evolved, xmcp expanded to prompts and resources using the same conventions: clear files, typed schemas, colocated metadata, and sensible defaults. By version 0.3 it covered the complete set of core MCP server primitives, and started feeling less like a useful shortcut and more like a framework.
+
+## From building tools to shipping products
+
+Supporting the protocol was only one part of the problem. A local server can be simple. A production server has users, authentication, infrastructure, failure modes, and, if things go well, a business model. It needs to connect to existing applications and deploy somewhere other than a developer’s laptop.
+
+Over time, xmcp added adapters for Next.js, Express, Fastify, and NestJS; authentication paths for Better Auth, WorkOS, Clerk, Auth0, Descope, and Scalekit; HTTP and STDIO transports in the same workflow; and deployment across Vercel, Cloudflare, Replit, Alpic, and anywhere else that can run the generated server.
+
+Then MCP moved beyond invisible tool calls. With MCP Apps, a tool can return an interactive interface instead of stopping at text or structured data. xmcp can build those interfaces with React, package their resources, and connect them to compatible hosts. Integrations with Polar, Commet, Stripe, and x402 opened up subscriptions, usage-based access, and agent-native payments.
+
+None of this was in the first sketch of xmcp. It came from using the framework, listening to what people were trying to ship, and finding the next piece of friction. That is the good side of growth. The other side is weight.
+
+## When development tooling follows you to production
+
+By version 0.7.1, xmcp contained two kinds of software in one package. The runtime: what a built server needs to receive requests, run tools, expose resources, and communicate over HTTP or STDIO. The compiler: the development machinery that discovers files, validates configuration, watches changes, invokes Rspack and TypeScript, and produces the final server.
+
+Both were necessary. They were not necessary at the same time.
+
+Once an xmcp server had been built, its compiler had finished its job. The generated artifacts were already self-contained and able to run without the project’s `node_modules`. Yet installing xmcp in production still brought the build toolchain along for the ride, and the package boundary no longer represented what the framework actually did at runtime.
+
+An abstraction has to earn its weight more than once. It has to make sense when you introduce it, and it has to keep making sense as the system around it grows. For xmcp 0.8, this one no longer did.
+
+## Splitting the compiler from the runtime
+
+Version 0.8 moved the development compiler into a dedicated package: `@xmcp-dev/compiler`. The main `xmcp` package now focuses on the production runtime, while the compiler owns file discovery, development mode, configuration processing, bundling, and code generation.
+
+**Runtime and compiler**
+
+```text
+Development
+xmcp + @xmcp-dev/compiler
+              ↓
+         xmcp build
+              ↓
+Self-contained HTTP or STDIO server
+              ↓
+Production runtime
+```
+
+This is an architectural change, but we wanted it to feel intentionally boring for existing users.
+
+The commands remain the same:
+
+**Commands**
+
+```bash
+xmcp dev
+xmcp build
+xmcp create
+```
+
+A small shim in the runtime package loads the compiler when one of those commands is used, and the generated output stays self-contained. We also added an `xmcp/config` export, so the compiler validates against the configuration schema supplied by the installed runtime instead of duplicating that contract between packages.
+
+## Lighter where it matters
+
+The split makes a measurable difference. In our reproducible comparison against xmcp 0.7.1, the published runtime package went from **11.82 MiB unpacked to 5.77 MiB**.
+
+The larger improvement appears in a fresh production installation. That footprint moved from **100.60 MiB across 168 dependency entries to 9.62 MiB across two entries**.
+
+Those figures describe the installed runtime, not a magically compressed server. The generated artifacts barely moved, because they were already self-contained: an HTTP build is still roughly 1.1 MiB, a STDIO build under half a MiB.
+
+We did not move dependencies around until a benchmark looked impressive; we removed development infrastructure from an environment where it had no work left to do. The compiler still uses the tools it needs, in development, where they belong.
+
+You can review the complete methodology and results in the [xmcp benchmark report](https://github.com/basementstudio/xmcp/blob/main/packages/xmcp/bench/RESULTS.md).
+
+## Reaching v1
+
+The package split was groundwork. It made the runtime small enough, and its boundaries clear enough, to be worth committing to. Version 1.0 is that commitment.
+
+It also brings xmcp up to the current protocol. MCP revision 2026-07-28 arrived with a restructured TypeScript SDK, splitting the old monolith into `@modelcontextprotocol/server` and `@modelcontextprotocol/client`. xmcp 1.0 adopts both, bundling them into the runtime as optional peers.
+
+Every transport — HTTP, STDIO, Cloudflare Workers, and the Next.js, Express, Fastify, and NestJS adapters — serves both protocol generations: 2026-07-28 envelope requests natively, including `server/discover` and cacheable list results, and 2025-era clients through the SDK’s stateless fallback. HTTP stays strictly stateless on both paths, with a fresh server per request.
+
+The revision also introduced multi round-trip tool input. A tool can return `inputRequired(...)` to ask for more from the caller before producing a result, and the same tool still serves 2025-era clients: the legacy shim converts the request into real elicitation.
+
+Version 1.1 added the other direction. `extra.sample()` lets a tool handler request an LLM completion from the connected client through MCP sampling, mirroring `extra.elicit()`. A tool can now ask the model on the other end of the connection to do part of the work.
+
+## Upgrading to v1
+
+Both packages are published. Existing projects upgrade with:
+
+**npm**
+
+```bash
+npm install xmcp@latest
+npm install --save-dev @xmcp-dev/compiler@latest
+```
+
+Keep the runtime and compiler on matching versions. Your existing tools, prompts, resources, configuration, and package scripts should continue to work without application-level changes.
+
+For new projects, `create-xmcp-app` will install and configure both sides of the split automatically:
+
+**New project**
+
+```bash
+npx create-xmcp-app@latest
+```
+
+The compiler is a development dependency, so production installs can omit it. The [installation documentation](https://xmcp.dev/docs/getting-started/installation) includes equivalent commands for pnpm, Yarn, and Bun.
+
+## Building less into more
+
+It is tempting to measure a framework’s progress by counting everything it can do. Each new capability expands what people can build, and we are excited to keep pushing those boundaries.
+
+But maturity is also knowing what to separate, what to remove, and what a production server should no longer have to carry.
+
+xmcp v1 is a smaller runtime because the framework has become a bigger system. The package split gave each part a clearer responsibility, and the protocol work underneath it kept the framework current, while preserving the workflow that brought people to xmcp in the first place.
+
+We are grateful to everyone who has tried the framework, opened an issue, built an integration, or shipped something unexpected with it. That feedback continues to shape where xmcp goes next.
+
+Explore the framework at [xmcp.dev](https://xmcp.dev), dive into the [documentation](https://xmcp.dev/docs), or come build with us on [GitHub](https://github.com/basementstudio/xmcp).
+
+There is plenty left to do. At least now, production will carry a little less of it.
+
+## Related Posts
+
+- [The Making of Shader Lab](https://basement.studio/post/the-making-of-shader-lab.md) — 2026-05-01
+- [Whatever It Takes to Craft a Brand - Even a Long Flight](https://basement.studio/post/whatever-it-takes-to-craft-a-brand-even-a-long-flight.md) — 2025-07-15
+- [New Digital HQ — pt 1](https://basement.studio/post/new-digital-hq-pt-1.md) — 2025-05-20
+
+---
+
+[View all content](https://basement.studio/sitemap.md)</body>

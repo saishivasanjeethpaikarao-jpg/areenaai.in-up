@@ -1,0 +1,186 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="download_date" content="2026-11-21T07:57:28.815Z"/></head><body># KidSuper World: Bringing Paints to Life With R3F
+
+**Author:** Nacho Mandagaran, Matías Gonzalez
+**Published:** 1/10/2024
+**Categories:** Development
+
+---
+
+We're thrilled to kick off the year by blending art, fashion, and intensive technology. Painting on the web with the KidSuper team brings fun challenges. Let's tackle them!
+
+Just doing what we love and getting recognition on platforms like [Awwwards](https://www.awwwards.com/sites/kidsuper-world), [The FWA](https://thefwa.com/cases/kidsuper-world) and [Landing Love,](https://www.landing.love/sites/kidsuper/) feels like we've aced the year already. Just kiddin', we're wondering what's next and writing some lines for the curious who got intrigued about the [kidsuper.world](http://kidsuper.world).
+
+This project offers a 3D immersive journey, allowing you to explore the KidSuper shop through engaging interactions with paintings and portals. The experience starts with a painting that vividly portrays the outdoors of their Brooklyn-based store. This is followed by a photo-realistic representation of the store's interior. Once inside, you're free to delve into various elements, from playing tunes on the Winco to admiring the captivating 'La Casa' animated artwork.
+
+Now, let's get behind the scenes!
+
+## Unveiling the store with shaders
+
+We wanted to enhance the feeling that you are inside a painted world. So, we created a reveal effect that allows the user to "paint" the scene with their mouse, gradually uncovering the building’s surroundings.
+
+![KidSuper Intro](https://cdn.sanity.io/images/9syto90m/production/e26214ae3bbece8813697f8ac74f6f3f2fc37db4-1365x768.png)
+
+_KidSuper Intro_
+
+To achieve this effect, we must first render and save the scene as a texture. Then, we mix two images to get the result. The first one is a pencil-drawn version of the render, created by detecting edges in the rendered texture - something like a contour sketch of the artwork.
+
+![Artwork Sketch](https://cdn.sanity.io/images/9syto90m/production/eb6dd4fdf5d631543a093dbed9903256fa0a8806-1365x769.png)
+
+_Artwork Sketch_
+
+The second one is the rendered scene.
+
+![Complete Artwork](https://cdn.sanity.io/images/9syto90m/production/e1f13895a6756e71ae2df7c6dc961781d637274c-1365x769.png)
+
+_Complete Artwork_
+
+These images are mixed using a mask that the user can draw in real-time; we just draw a circle into the revealed texture following the user's mouse position.
+
+[Watch video](https://stream.mux.com/MZIPYvflIj014mlKpnHxJ88o5QzNCnvheaSxHEOT2B9w.m3u8)
+
+&gt; **Note**
+&gt;
+&gt; Notice that the reveal mask has a low resolution to improve performance. We added an offset to the reveal mask using a "paint" texture to fix this.
+
+[Watch video](https://stream.mux.com/Q1UT2OMVMg3euCXt30101Y02QEPnzbqzxCKgomGwNBVunk.m3u8)
+
+To complete the effect, we need to add a canvas normal map on top of the final render.
+
+[Watch video](https://stream.mux.com/Cto02IygrefpwrfHEVZikvEQslwi6qXuwL0202Heg9u9Fs.m3u8)
+
+### Performance Hint: Disabling The Effect
+
+Constantly drawing in a canvas consumes resources, so once the reveal effect is finished, we turn off the entire calculation at once. To achieve this, we first created a boolean uniform, `renderReveal`, used in a function called `getReveal` that returns the result of mixing the two images based on the `drawMap`.
+
+**code**
+
+```cpp
+// UV coordinates
+varying vec2 vUv;
+// The render of the scene
+uniform sampler2D tDiffuse;
+//The map drawed by the user
+uniform sampler2D drawMap;
+// A texture of painting to offset the drawMap
+uniform sampler2D brushTexture;
+// Whether to calculate or skip the reveal effect
+uniform bool renderReveal;
+
+struct Reveal {
+  vec3 color;
+  float factor;
+};
+
+Reveal getReveal() {
+  vec3 color = texture2D(tDiffuse, vUv).rgb;
+  if (!renderReveal) {
+    // skip the entire reveal calculation
+    return Reveal(color, 1.0);
+  }
+  // ... Real mask calculation
+}
+```
+
+## Animated Paintings With WebGL
+
+One of the key features of this experience was the possibility of diving into animated paintings. This was, at first, simple. We’d just use different scenes and render them with multiple cameras, then use the rendered textures in materials to “place them” on the studio walls.
+
+[Watch video](https://stream.mux.com/Zkww00Kh9kijbzKIgJvVINBKqV01c1wm89mF2QdBT6ypw.m3u8)
+
+Thankfully, the awesome people of [pmndrs](https://pmnd.rs/) created `pmndrs/drei` a huge package full of utilities for [ThreeJS](https://threejs.org/). This library features a `RenderTexture` component, a handy helper that enables you to transform a live scene into a texture, which can then be applied directly to a material.
+
+Because of the nature of this project, we had multiple render textures that quickly became expensive to the GPU. That is why we had to create our own version of the `RenderTexture` component, allowing us to pause the render and do other things like passing custom render targets as a prop. Let’s see.
+
+### Creating Our Own RenderTexture Component
+
+This component was heavily based on Drei’s `RenderTexture` ([check its source](https://github.com/pmndrs/drei/blob/master/src/core/RenderTexture.tsx)). But, in our case, we needed some extra features:
+
+1. Allow us to pause the render
+1. If the render target size changes, re-render one frame.
+1. It should provide some context to know if it’s rendering
+1. Let us pass custom render targets
+
+This is an example of usage:
+
+**code**
+
+```javascript
+const HudRenderer = () =&gt; {
+  const [isActive, setIsActive] = useState(true)
+  const size = useThree((state) =&gt; state.size)
+
+  // This render target will be automatically resized by RenderTexture
+  const hudRenderTarget = useMemo(() =&gt; new WebGLRenderTarget(10, 10), [])
+  // scene to use as a container
+  const hudScene = useMemo(() =&gt; new Scene(), [])
+
+  return (
+    <rendertexture size="" of="" the="" render="" target="" width="{size.width}" height="{size.height}" should="" continue="" to="" this="" scene="" isplaying="{isActive}" write="" fbo="{hudRenderTarget}" use="" as="" container="" containerscene="{hudScene}" if="" you="" want="" same="" pointer="" main="" canvas="" useglobalpointer="">
+      <hudscene>
+      <perspectivecamera makedefault="" position="{[0," 0,="" 3]}="">
+    </perspectivecamera></hudscene></rendertexture>
+  )
+}
+```
+
+We can then use `hudRenderTarget.texture` to get the rendered scene.
+
+The component provides some context data, which we use to pause animations. We also created a custom hook called `useTextureFrame`, which is similar to useFrame but only executes when the render texture is playing, letting us pause computations.
+
+&gt; **Note**
+&gt;
+&gt; Is this component open-source? We still need to clean the code and search for possible bugs; follow us on [x.com](https://twitter.com/basementstudio) so you get notified when it's released!
+
+## Navigating Through Portals
+
+Another key to making this world immersive is the portal navigation to travel through scenes. You can access the store and then go back to the outdoors smoothly, like spiraling into an infinite loop animation.
+
+To tackle this challenge, we used a technique similar to the one on the custom `RenderTexture`, but this time, a global renderer will mix the scenes. We start off by rendering each scene into a render target:
+
+![Render Targets](https://cdn.sanity.io/images/9syto90m/production/988e26f56ca8154669447423727b14d23aa7521b-1820x1034.png)
+
+_Render Targets_
+
+Then, the result of each render target is used as a map for the portal object.
+
+![Portals](https://cdn.sanity.io/images/9syto90m/production/56b0600607287ec309ae29ee82daedf4f0e0bd2d-1820x1034.png)
+
+_Portals_
+
+Finally, a global composer decides which texture should be rendered into the screen and adds postprocessing.
+
+![Portal Mixer](https://cdn.sanity.io/images/9syto90m/production/7e36e7a783db490d7b8616412ccfa1e32ed9fe62-1820x1034.png)
+
+_Portal Mixer_
+
+When you click on a portal, the camera is moved in front of the portal mesh, aligning perfectly so there is no “jump” when transitioning into scenes.
+
+## A Shareable WebGL Sketch With Vercel Blob and Vercel KV
+
+Among some fun easter eggs, you can open a notebook in the store's bookshelf to create your own artwork by sketching on the screen. The best part? You can share it on Twitter, as we saved the original painting directly to the URL.
+
+[Watch video](https://stream.mux.com/e8wduNACaVfpO4adH200LWg5bFTmD7bY5glj00XJcafXc.m3u8)
+
+To begin with, we crafted a compact drawing tool using `pmndrs/meshline` library. This lib allows us to create lines by connecting points we got through raycasting the mouse movement over the surface of the drawing canvas and using his UV to calculate the position of each point in this space. After completing your artwork and clicking on the "share" button, we capture a still frame from the isolated render of the notebook and save it in [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) storage via a route handler, which returns the URL to be able to access our blob later.
+
+![OG for notebook sharing](https://cdn.sanity.io/images/9syto90m/production/a3ebbd10c59e647a89f0bd2e1f7642f7859ac12d-1359x1360.png)
+
+_OG for notebook sharing_
+
+Then, another route handler, using [Sharp](https://github.com/lovell/sharp), takes care of the cropping, optimization, and accessories of the render frame we saved in our storage and gives the correct format to be used as an OG image. The tricky part involves preserving the actual data for retrieval when someone accesses the URL. We addressed this by storing the matrix of points' state via [Vercel KV](https://vercel.com/docs/storage/vercel-kv) (a serverless Redis storage) and linking it with the Blob URL as a key.
+
+This way, we allow users to create their own experiences, similar to the phenomenon we generated with the paint app in the Wilbur Soot store.
+
+## Final Words
+
+Having space for innovation is key to expanding capabilities and going the extra mile. We're stoked about this collab: this project let us wrap up 2023 with a bunch of cool experiments, and we're kicking off the new year super excited about all the creative possibilities we’re unlocking on the web. So, stay in the loop, follow us on [x.com](https://x.com/basementstudio), and don't miss the chance to turn up the music player and check out all the nifty features we crafted at [https://kidsuper.world](https://kidsuper.world).
+
+## Related Posts
+
+- [From Experiment to Framework: The Road to xmcp v1](https://basement.studio/post/from-experiment-to-framework-the-road-to-xmcp-v1.md) — 2026-08-25
+- [The Making of Shader Lab](https://basement.studio/post/the-making-of-shader-lab.md) — 2026-05-01
+- [Whatever It Takes to Craft a Brand - Even a Long Flight](https://basement.studio/post/whatever-it-takes-to-craft-a-brand-even-a-long-flight.md) — 2025-07-15
+
+---
+
+[View all content](https://basement.studio/sitemap.md)</body>

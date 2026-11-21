@@ -1,0 +1,123 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="download_date" content="2026-11-21T07:57:28.815Z"/></head><body># Shipping Ship: Behind the Particle Shader Effect for Vercel’s Conf
+
+**Author:** Matías Gonzalez
+**Published:** 4/29/2024
+**Categories:** Development
+
+---
+
+See how this ethos came to life in the particle shader effect we created for Vercel Ship. 
+
+For this year’s [Ship event](https://vercel.com/ship), we joined forces with Vercel's brand team, aiming to explore the world of particles. Our mission? To create an engaging (and performant!) experience where the Ship logo breaks into particles that gravitate towards the mouse.
+
+## How it Started
+
+Our 3D team started experimenting with letters built out of particles and sent this preview. Collaboratively with the Vercel team, we put together a proof of concept that breaks the logo into particles that can be moved with the cursor.
+
+![Gif showing how the particle effect works](https://cdn.sanity.io/images/9syto90m/production/c7df2ae262f690be9df0cb5a4372d21911d4b217-1365x936.gif)
+
+_Gif showing how the particle effect works_
+
+[Watch video](https://stream.mux.com/QJvh77FU01dYRV11UdZdXwO1mA004Z9W01twSN02AUdU022k.m3u8)
+
+After this experiment, we knew this was the correct path. We wanted a light and simple framework to work with particles, so we decided to use [Regl](https://github.com/regl-project/regl) as our WebGL framework.
+
+## Implementation
+
+To achieve this effect, we created a grid of particles that will move when the mouse is close to them.
+
+These particles will also render the texture of the logo and the button, and when they start to move, they turn into small dots.
+
+Let’s scale the effect to see what is happening:
+
+[Watch video](https://stream.mux.com/gPEbvXEsVQZ2traqVaLoT9MnWyHGOds0201pL001gXc4KY.m3u8)
+
+We wanted the particles to behave differently in different parts of the screen. For example, we don't want the particles at the center of the button to move:
+
+[Watch video](https://stream.mux.com/n6Lsv4YIsQms59eYw002moqUSIhnRfc1V3P4izZhN00Yk.m3u8)
+
+But how does each particle know if it can move and how much? One way to easily relay this information is to encode it into a texture. Each particle will sample this texture at its position and use each channel (RGB) to decode how much and where it can move. We called this texture `baseFbo`.
+
+![Image showing how the particle effect works](https://cdn.sanity.io/images/9syto90m/production/a53857902f743accbdde0c4fd3a22d08e181ae6d-2730x1536.png?w=2400&amp;h=2400&amp;fit=max&amp;auto=format)
+
+_Image showing how the particle effect works_
+
+The red channel serves as a texture for both the logo and the button. In other words, wherever baseFbo is red, the particle will appear white.
+
+![Image showing how the particle effect works](https://cdn.sanity.io/images/9syto90m/production/43e4839fd459acf84716fade4787b18f3b430c2e-1365x768.png)
+
+_Image showing how the particle effect works_
+
+The green channel determines how much a given particle can move; this is especially useful to disable the effect on some parts of the hero.
+
+![Image showing how the particle effect works](https://cdn.sanity.io/images/9syto90m/production/cc6134bce61b57c71cb72e5a2e27aa689420a7a7-1365x768.png)
+
+_Image showing how the particle effect works_
+
+&gt; **Note**
+&gt;
+&gt; Notice how the center of the button is not green, so the particles there won't move.
+
+![Image showing how the particle effect works](https://cdn.sanity.io/images/9syto90m/production/81b0273dae7ed244a490a7df5772f5d256a73cff-1365x768.png)
+
+_Image showing how the particle effect works_
+
+An issue we had to solve was breaking the illusion that you are moving a circular mask over an image, so we used the `blue channel` to allow the effect to grow in that area. The area of the magnet grows along the path and does not jump directly into an unconnected section.
+
+![Image showing how the particle effect works](https://cdn.sanity.io/images/9syto90m/production/db13f0c39a45c5f17aecfc994546711d5d8e5afa-1365x768.png)
+
+_Image showing how the particle effect works_
+
+![Image showing how the particle effect works](https://cdn.sanity.io/images/9syto90m/production/4f491e109ebe7c17c93cb3d884ffd1f92fd275e0-1365x768.png)
+
+_Image showing how the particle effect works_
+
+&gt; **Note**
+&gt;
+&gt; Notice how we added a “bridge” between the S and the button, so if your mouse is in the middle, both elements will move.
+
+## Cursor Gravity
+
+We want the particles to gravitate towards the mouse and slowly return to their original position. To achieve that, we created a `flow shader` that stores information about mouse movement.
+
+[Watch video](https://stream.mux.com/htpG00SyYOcbshnI5ewhzwC019GVpwXAmmpCkKRfvt01MI.m3u8)
+
+We used the `red` and `green` components to store the direction from the pixel to the mouse. This could also be achieved with a simpler calculation (`PixelPos - MousePos`), but we wanted the position to have a fade out so the particles don't move 1-1 with the mouse. If a particle is already moving, it will change its direction slower than a static one.
+
+The blue component of the shader indicates how much the particles should move. That factor is later combined with the `baseFbo` and the direction vector to calculate where the particles should land.
+
+![Image showing how the particle effect works](https://cdn.sanity.io/images/9syto90m/production/0bbd8555267ff9a833a9c9af10c5cd4cf6f97033-1365x768.png)
+
+_Image showing how the particle effect works_
+
+Here are all the shaders working at the same time:
+
+[Watch video](https://stream.mux.com/t9g006xPv02bRAstPOx1H85rr9vpWhqHdEDJKmBId01RbA.m3u8)
+
+The final combination of the buffers looks like this:
+
+[Watch video](https://stream.mux.com/zENvepupeBOEBJobQmO200wJXDs9ql6P00GZ1VwIVyIa00.m3u8)
+
+## Optimizations
+
+We wanted the site to load instantly, so waiting for the hero shader to be ready wasn’t an option. To fix this, we first animated the letters using SVG while the particles loaded, and when the effect was ready, we switched the SVG with the canvas.
+
+We had to implement antialiasing to the letter texture so that the switch was not noticeable. If we zoom in on a letter, we can tell when the switch is happening.
+
+[Watch video](https://stream.mux.com/00KYNDfFH01slkVzuIj8Lhaq502S2vGiz76sR6ukopbICU.m3u8)
+
+## Shipped!
+
+Creating this simple effect was an awesome experience that allowed us to experiment with `Regl`, particles and optimization tricks.
+
+Take a look at how the Vercel team made the [dropping lanyard for the Vercel Ship 2024 site](https://vercel.com/blog/building-an-interactive-3d-event-badge-with-react-three-fiber).
+
+## Related Posts
+
+- [From Experiment to Framework: The Road to xmcp v1](https://basement.studio/post/from-experiment-to-framework-the-road-to-xmcp-v1.md) — 2026-08-25
+- [The Making of Shader Lab](https://basement.studio/post/the-making-of-shader-lab.md) — 2026-05-01
+- [Whatever It Takes to Craft a Brand - Even a Long Flight](https://basement.studio/post/whatever-it-takes-to-craft-a-brand-even-a-long-flight.md) — 2025-07-15
+
+---
+
+[View all content](https://basement.studio/sitemap.md)</body>

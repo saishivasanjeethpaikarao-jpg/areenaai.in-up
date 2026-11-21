@@ -1,0 +1,267 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="download_date" content="2026-11-21T07:57:28.815Z"/></head><body># GSAP &amp; Next.js Setup: The BSMNT Way
+
+**Author:** Agustín Segui, Joaquín Montes
+**Published:** 11/7/2023
+**Categories:** Development
+
+---
+
+Batman and Robin? Rick and Morty? Bad Boys? Sure, you could name them all, but here we're more into the dynamic duo of Next.js and GSAP, right? Let's have fun!
+
+At [basement.studio](https://basement.studio) we're firm believers in streamlining our toolset to drive creativity and thrive strongly. And that's where Next.js and GSAP come into play. These tools are our weapons of choice to build creative and performant experiences in all our projects.
+
+Here on our blog, we wanna share our experience because, let's face it, we have a blast building cool stuff with these tools. Take [BSMNT Scrollytelling](https://scrollytelling.basement.studio/), our latest library. It's a prime example of what we've accomplished from investing time and effort in this particular stack.
+
+Plus, there are some specific tips for pairing Next.js with GSAP that can make your life easier. Before jumping into our OSS library or other complex animation challenges, we'll start with the basics — project setup and our team's specific approaches.
+
+## Why Next.js and GSAP
+
+[Next.js](https://nextjs.org/) is our go-to framework, simplifying web development by providing a solid application structure, routing, and server-side rendering (SSR), not to mention a plethora of components that take the headache out of complex front-end infrastructure. Even though the framework is a key part of our toolkit, we won't be delving into fundamentals in this post. But stay tuned; we’re cooking something for upcoming content!
+
+&gt; **Note**
+&gt;
+&gt; Interested in learning more about Next.js? Check out their [official resources](https://nextjs.org/learn)
+
+When it comes to bringing our creations to life, [GSAP](https://gsap.com/) is our animation engine of choice. We know how it pairs with React—the good and the bad stuff. It's also brimming with features far beyond any other library and is full of powerful plugins we always vet before tackling a tricky animation problem. As a framework-agnostic library, you can use it whether you're working in React or any other framework. The core principles stay the same.
+
+With GSAP, you can work with any web component. In Greensock's words, it lets you "animate anything" —whether it's simple DOM transitions, SVG, Three.js, canvas or WebGL, or even generic JavaScript objects.
+
+And let's not forget, as they proudly state in their docs, animating imperatively with GSAP offers you a lot more power, control, and flexibility. Plus, GSAP is obsessed with performance, optimizations, and browser compatibility, so you can focus on the fun stuff.
+
+&gt; **Note**
+&gt;
+&gt; This post is all about configuring GSAP in Next.js. We recommend a solid understanding of React and encourage you to check out the GSAP’s [intro documentation](https://gsap.com/resources/React)
+
+## The bsmnt Way
+
+Now, let's get down to business. Where do we set up GSAP? You could put it anywhere on the app, but what if you are looking for consistency or easy maintenance? Instead, let's keep things tidy and organized.
+
+Let’s start by generating a file within the `lib/gsap` directory, where we will perform the imports and possible plugin registrations. Here we also will set the default values we want to use across the app, such as duration, ease, and other settings.
+
+**code**
+
+```javascript
+// src/lib/gsap/index.tsx
+
+import gsap from 'gsap';
+import { CustomEase } from 'gsap/dist/CustomEase';
+import { SplitText } from 'gsap/dist/SplitText';
+
+gsap.registerPlugin(CustomEase, SplitText);
+
+const GOLDEN_RATIO = (1 + Math.sqrt(5)) / 2;
+const RECIPROCAL_GR = 1 / GOLDEN_RATIO;
+const DURATION = RECIPROCAL_GR;
+const EASE = CustomEase.create('ease', '0.175, 0.885, 0.32, 1');
+
+// Configuring GSAP with custom settings that aren't Tween-specific
+gsap.config({
+  autoSleep: 60,
+  nullTargetWarn: false
+});
+
+// Setting default animation properties that should be inherited by ALL tweens
+gsap.defaults({
+  duration: DURATION,
+  ease: EASE
+});
+
+// Once the desired configurations are set, we simply export what we need to work with in the future.
+export { CustomEase, DURATION, EASE, GOLDEN_RATIO, gsap, SplitText };
+```
+
+In a nutshell, what we're doing in this file is setting up and customizing GSAP to fit our needs and preferences for the project. Now, let's go over the key parts of the code and their purposes:
+
+### Basic import
+
+**code**
+
+```javascript
+import gsap from 'gsap';
+import { CustomEase } from 'gsap/dist/CustomEase';
+import { SplitText } from 'gsap/dist/SplitText';
+
+gsap.registerPlugin(CustomEase, SplitText);
+```
+
+We're importing GSAP and some additional plugins, like `CustomEase` and `SplitText`. We’re not diving deep into this today, but plugins are often used for creating more advanced animations. Don’t forget to register them with `gsap.registerPlugin()` to ensure seamless function with the core framework without tree-shaking issues in build tools/bundlers.
+
+### Constants
+
+**code**
+
+```javascript
+const GOLDEN_RATIO = (1 + Math.sqrt(5)) / 2;
+const RECIPROCAL_GR = 1 / GOLDEN_RATIO;
+const DURATION = RECIPROCAL_GR;
+const EASE = CustomEase.create('ease', '0.175, 0.885, 0.32, 1');
+```
+
+We're setting a series of constants that we'll use later. For example, `DURATION` represents the default timing for animations, so you can tweak it here and propagate the value everywhere on your app, keeping consistency in your animation system.
+
+### Default configuration
+
+**code**
+
+```javascript
+// Configuring GSAP with custom settings that aren't Tween-specific
+gsap.config({
+  autoSleep: 60,
+  nullTargetWarn: false
+});
+
+// Setting default animation properties that should be inherited by ALL tweens
+gsap.defaults({
+  duration: DURATION,
+  ease: EASE
+});
+```
+
+In this section, we're setting up some custom options.
+
+With `gsap.config()`, you can tweak GSAP's settings that aren't Tween-specific.
+
+Through `gsap.defaults()`, we're setting the default properties of all animations by passing the constant values we previously defined.
+
+### Export
+
+**code**
+
+```javascript
+// Once the desired configurations are set, we simply export what we need to work with in the future.
+export { CustomEase, DURATION, EASE, GOLDEN_RATIO, gsap, SplitText };
+```
+
+Finally, we're exporting the relevant constants and objects so they can be used in other files. This facilitates consistency and reusability of configurations across the code.
+
+## The Key Part: Custom Importing
+
+Now, here's the magic trick. Instead of importing GSAP the old-fashioned way, we're going to use `import { gsap } from '~/lib/gsap'` instead of `import gsap from 'gsap'.` Why? Because we're all about consistency, global management, and reusability. When we import GSAP from the `~/lib/gsap/index.tsx` file, we're using a GSAP instance that's already set up according to preferences and default values we've configured before.
+
+This approach ensures all animations use the same settings, making the code more predictable and easier to maintain.
+
+1. If we ever need to make changes to GSAP's configuration across the entire project, we only have to do it in one place. This simplifies global configuration management.
+1. If we wish to reuse certain constants or settings in multiple components, like `DURATION`, we can easily do so by importing them from our preset file instead of having to define them again in each component.
+1. If we need to update GSAP or its plugins in the future, we only have to perform the update in one place rather than searching and modifying each individual import throughout the project.
+
+## Working in React Environments
+
+It's worth noting that GSAP is framework-agnostic, so it's not specifically designed to work with any particular framework, including React. This means you can use GSAP with any front-end technology, making it incredibly versatile.
+
+However, when using GSAP within a React (or Next.js) project, it's important to keep some key aspects in mind to ensure they work together efficiently and harmoniously. This includes handling the state, component lifecycles, and the way React updates the DOM.
+
+**Respect the React flow:** For instance, you shouldn't use GSAP to directly modify React's state, but instead, use the setters provided by state hooks.
+
+**Proper DOM Handling:** React has its own virtual DOM management, while GSAP works directly with the actual DOM. Make sure that when GSAP interacts with DOM elements, they're already present and managed by React. We’ll be diving deep into this while talking about the lifecycle.
+
+**Understanding Lifecycles:** React handles its own component lifecycle, and it's important that your GSAP animations integrate with it.
+
+### Surviving in the lifecycle
+
+The biggest challenge when working with animations in SSR apps like Next.js is making sure they play nice with the component's lifecycle. You might want to start animations after React has updated the DOM, right?
+
+So, here comes `useIsomorphicLayoutEffect` to the rescue.
+
+**code**
+
+```javascript
+useIsomorphicLayoutEffect(() =&gt; {
+    const tween = gsap.fromTo(...);
+
+    return () =&gt; {
+        tween.revert();
+    };
+}, []);
+```
+
+This hook is a blend of React's traditional effect (useEffect) and useLayoutEffect, designed to handle things both on the server and on the client. Whenever we use this, we shouldn't run into synchronization issues since it runs after DOM mutations have been made but before the browser has painted.
+
+But what’s under the hood? It’s all about being aware of the window component.
+
+**code**
+
+```javascript
+import { useEffect, useLayoutEffect } from 'react';
+
+const useIsomorphicLayoutEffect =
+  typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
+export default useIsomorphicLayoutEffect;
+```
+
+### Animating at the component level
+
+Alright, enough with the configs and warnings. Let's get this party started and make something move on the screen. Let’s make a **`div`** that plays a fade-in and slide-in animation when the component mounts. We’ll need to revert the animation when the component unmounts for cleanup. Easy stuff:
+
+**code**
+
+```javascript
+export default function MyComponent() {
+  const productRef = useRef<htmldivelement>(null);
+
+  useIsomorphicLayoutEffect(() =&gt; {
+    if (!productRef.current) return;
+
+    const timeline = gsap.timeline({
+      paused: true,
+      defaults: {
+        ease: 'power4.out'
+      }
+    });
+
+    timeline.fromTo(
+      productRef.current,
+      {
+        autoAlpha: 0,
+        xPercent: 100
+      },
+      {
+        autoAlpha: 1,
+        xPercent: 0
+      }
+    );
+
+    timeline.play();
+
+    return () =&gt; {
+      timeline.revert();
+    }
+  }, []);
+
+  return (
+    <div ref="{productRef}">
+  );
+}
+```
+
+First, we created a reference to a DOM element using **`useRef`**, which targets the element we want to animate. In the render method, we can return a **`div`** element and attach our reference to it. This element is what we'll animate with the GSAP timeline.
+
+Next, we used the great **`useIsomorphicLayoutEffect`** hook that runs synchronously after all DOM mutations. Inside this hook, it’s important to first check if the **`productRef.current`** is defined. If it isn't, we return early to avoid errors.
+
+Then, we created our GSAP timeline. We recommend you check out the official docs to learn everything about this powerful tool. Basically, by using **`timeline.fromTo()`****,** we defined the animation from a specific starting point, for instance, 0 for the **`autoAlpha`** (making the element invisible) and 100 for the **`xPercent`** (the horizontal offset). Then, it goes to an endpoint, where **`autoAlpha`** must be 1 to reveal the element, and **`xPercent`** needs to be 0 to appear in its original position. In simpler terms, this animation fades in the element while moving it horizontally from right to left.
+
+Remember, there's no need to establish a duration or easing here, as we're applying the constant values we've already defined through `gsap.defaults()` in `'~/lib/gsap'`. This ensures a consistent rhythm across all components for a harmonious user experience. However, if you wish to deviate from these default values, you can manually overwrite them at this point.
+
+Finally, with [**`timeline.play`**](http://timeline.play)**`()`****,** we can start the animation and then return a cleanup function that calls **`timeline.revert()`**** to** reset the timeline to its initial state when the component unmounts.
+
+### Easy debugging
+
+Lastly, we also want to have some control and good debugging experience. Especially when we're orchestrating a symphony of complex animations across multiple components. We're all familiar with the numerous methods available for debugging. These include the [browser](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/Tools_and_setup/What_are_browser_developer_tools)[ dev tools](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/Tools_and_setup/What_are_browser_developer_tools), the one and only `console.log()`, and the powerful [GSDevTools](https://gsap.com/docs/v3/Plugins/GSDevTools/), to name a few.
+
+But remember, you're operating within the lifecycle, so within the **`useIsomorphicLayoutEffect`****,** you can log the state of the timeline after it has played or even after it has been reverted. Double-check that the references to the DOM elements (using useRef in React) are correctly set up. Sometimes, animations fail simply because references aren't pointing to the right elements.
+
+## What’s Coming
+
+We're all set! Now you have a scalable codebase from which you can start building, maintaining, and tweaking with ease. We hope this approach proves beneficial to you. Do not hesitate to reach out to our team if you need any help - we're always open to discussing anything related to development on our [Discord](https://discord.gg/nJ9CVJGHVy) channel.
+
+But don't think we're stopping here. We have exciting things lined up for you. Keep an eye out for upcoming chapters where we'll delve into more complex animation tasks. Plus, we'll get into [BSMNT Scrollytelling](https://github.com/basementstudio/scrollytelling), our open-source library for creating React-friendly on-scroll animations, all powered by GSAP's ScrollTrigger.
+
+## Related Posts
+
+- [From Experiment to Framework: The Road to xmcp v1](https://basement.studio/post/from-experiment-to-framework-the-road-to-xmcp-v1.md) — 2026-08-25
+- [The Making of Shader Lab](https://basement.studio/post/the-making-of-shader-lab.md) — 2026-05-01
+- [Whatever It Takes to Craft a Brand - Even a Long Flight](https://basement.studio/post/whatever-it-takes-to-craft-a-brand-even-a-long-flight.md) — 2025-07-15
+
+---
+
+[View all content](https://basement.studio/sitemap.md)</div></htmldivelement></body>

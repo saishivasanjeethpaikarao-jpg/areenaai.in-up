@@ -1,0 +1,93 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="download_date" content="2026-11-21T07:57:28.815Z"/></head><body># Serving Millions of Users on the New MrBeast Storefront
+
+**Author:** Jose Rago
+**Published:** 10/21/2022
+**Categories:** Case Study
+
+---
+
+When MrBeast called, we answered. Tasked with creating a high-performance, fun-packed storefront for one of the largest fanbases on the planet, we brought our A-game. From engaging mini-games to seamless e-commerce, we crafted a digital experience worthy of the Beast himself—designed to delight, built to perform, and ready for millions.
+
+## **Serving Millions of Users on the New MrBeast Storefront**
+
+It was a hot summer day in Mar del Plata, Argentina. AC running full steam at the basement HQ.
+
+We got a call from [MrBeast](https://www.youtube.com/channel/UCX6OQ3DkcsbYNE6H8uQQuVA). It was big, they said, they were to lead a new merchandising campaign, and we were to design and develop the storefront where his immense fanbase would shop.
+
+We knew we could handle traffic, but we had never handled as much as MrBeast would bring.
+
+![Mrbeast Brand figure asset](https://cdn.sanity.io/images/9syto90m/production/70b33410a2a7c18d396df6c396f7b6a3a8051177-653x558.png)
+
+_Mrbeast Brand figure asset_
+
+!["Slap to Win" Game figure asset](https://cdn.sanity.io/images/9syto90m/production/4feb4cdf745f5f0631717a3aec686f9d9bdc9217-1226x984.png)
+
+_"Slap to Win" Game figure asset_
+
+Of course, keeping the site up was not an accomplishment in itself. We needed to give every visitor a delightful shopping experience. An experience that was top-notch in terms of design and performance, with fun mini-games to make it feels like a MrBeast video, and most importantly, direct users to buy.
+
+## **We Took It To The Lab**
+
+While designing the site, we had both concrete requirements and more abstract ones. The client proposed us a sitemap and content structure., but we had to come up with fun stuff: “we want people to have fun on the site”, they said.
+
+&gt; We added a layer of entertainment while keeping the BUY flow as the star of the show.
+&gt;
+&gt; — Mateo Zaragoza, Designer
+
+After sessions of brainstorming, Lambo Jump was born: an infinite runner with similar mechanics to Google’s famous "No Internet Connection T-REX Game", but with MrBeast style.
+
+We also knew that we couldn’t compromise the site’s performance because of this, so we loaded Lambo Jump’s JavaScript right when the user pressed the “PLAY” button.
+
+&gt; An arduous task; from development, testing, debugging, and solution architecting; each feature worked on a required prior analysis to assess its impact on performance. Having the MrBeast team with strong QA helped us achieve greatness.
+&gt;
+&gt; — Nacho Mandagaran, Developer
+
+The game was a huge success, with MrBeast fans sharing their scores on Twitter, and some of them even shooting YouTube videos about their experience playing it. What’s your high score, btw?
+
+[Watch video](https://stream.mux.com/iNfIul3wL2s6Gxma1Hz6gjJQ02CUTAHWylfI01RT00CFKE.m3u8)
+
+While Lambo Jump was a good idea, we wanted something more. Inspired by the “Cookie Clicker” game, we came up with “Slap to Win”: a game where visitors would “slap” members of the MrBeast crew. They loved it; in fact, they suggested the rewards could be actual products! This was a perfect way to engage visitors: a fun little game that had real rewards to redeem.
+
+[Watch video](https://stream.mux.com/5T00G8aM7701VfWGdn8Z01cM8RFGqyly7nkRMkfCbMxkE8.m3u8)
+
+We had a big concern: tech-savvy folks could hack it ([which they did](https://github.com/nismo1337/shopmrbeastslaptowin)), but we were giving away real products! We couldn’t just give away real stuff to hackers. We raised this issue to the MrBeast team and suggested putting in some rules to the game: prizes would only be redeemable alongside other purchases, and you would be able to redeem only one prize per purchase.
+
+We solved the game’s logic server-side. With the help of Shopify’s Admin API, we created discount codes for the products that users redeemed, and luckily for our developers, Shopify’s Discounts API has fine-grain controls that allow us to set rules exactly as we wanted to.
+
+![Mr Beast's webiste](https://cdn.sanity.io/images/9syto90m/production/926718eec876a2484d34b0017df4cd3e575e9a87-1226x873.png)
+
+_Mr Beast's webiste_
+
+## **Development &amp; Pre-launch**
+
+Vercel, Shopify, Axiom. These tools were the heroes of this story.
+
+[Vercel](https://vercel.com/) not only helped us iterate faster and deliver the site to all of our users; their Customer Success team worked alongside us to make sure everything was set up correctly from our side and theirs. MrBeast's team asked us if we’d be able to keep the site up despite all the traffic (and the unpredictability of it), and we relied on Vercel to do so. We actually set a record on the Vercel platform for the most requested site in the span of a week. Scary stuff, but still, a great achievement!
+
+![Mobile](https://cdn.sanity.io/images/9syto90m/production/6bc1c65ee6779e8d51d153acb1325a0b258d9d3e-2096x1538.png)
+
+_Mobile_
+
+[Shopify](https://shopify.dev/) is our go-to e-commerce provider, and their wide range suite of features covers all our needs. We leveraged their [Storefront API](https://shopify.dev/api/storefront), with a library built by us to connect to it in a type-safe manner: [react-dropify](https://github.com/basementstudio/react-dropify). They served all of MrBeast’s traffic just fine!
+
+[Watch video](https://stream.mux.com/H6dOoyvDh91p00tZXkvvzySRymXXVxqMfUeSlKavr2mQ.m3u8)
+
+[Axiom](https://www.axiom.co/) is a newcomer to “the basement stack” ™. They provide observability at scale, which allowed us to monitor everything that was happening on the site at all times. We created a “Launch Dashboard” which observed different metrics and errors and gave us the confidence to know everything was fine.
+
+## **The Beast &amp; 100 Million Subscribers**
+
+Nerves? Nah, we’ve got nerves of steel. Remember that thing we say about making cool sh*t that performs? This wasn’t any different; we were ready, but let's not talk too much and allow our work to speak for itself.
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/290fc271ebed964c69d7a6db0076f58436ede447-2452x1473.jpg?w=2400&amp;h=2400&amp;fit=max&amp;auto=format)
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/a72e37d7453ae6e31c49b0fe71af2e9c82e6ba0c-2452x1473.jpg?w=2400&amp;h=2400&amp;fit=max&amp;auto=format)
+
+## Related Posts
+
+- [Until: Giving Cryopreservation Its True Identity](https://basement.studio/post/until-giving-cryopreservation-its-true-identity.md) — 2025-12-04
+- [Whatever It Takes to Craft a Brand - Even a Long Flight](https://basement.studio/post/whatever-it-takes-to-craft-a-brand-even-a-long-flight.md) — 2025-07-15
+- [Scaling Vercel: Years of Building, Refining, and Elevating](https://basement.studio/post/scaling-vercel-years-of-building-refining-and-elevating.md) — 2025-02-18
+
+---
+
+[View all content](https://basement.studio/sitemap.md)</body>

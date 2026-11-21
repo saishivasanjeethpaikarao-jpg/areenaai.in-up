@@ -1,0 +1,159 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="download_date" content="2026-11-21T07:57:28.815Z"/></head><body># New Digital HQ — pt 1
+
+**Author:** Basement Team
+**Published:** 5/20/2025
+**Categories:** Development, 3D, Design
+
+---
+
+New HQ, new site, same basement. From PS2 aesthetics and custom shaders to instanced meshes and light-maps — here’s how we turned our home into a performant &amp; interactive playground on the web.
+
+2024 was a year of remarkable achievements. We launched [KidSuper World](https://kidsuper.world/) — an astonishing 3D e-commerce experience, we won a webby for that. We pushed the boundaries of interactivity and multiplayer experience with the latest [Next.js](https://nextjs.org/conf) Conf site. We crafted a beautiful commerce for [Daylight Computer.](https://daylightcomputer.com/) and we also partnered with [Cursor AI ](https://www.cursor.com/)— the largest AI-integrated code editor on the internet nowadays.
+
+Btw our most ambitious project of 2024 was, in fact, building our brand new studio — a 500m² space just steps from the sea in Mar del Plata, Argentina, the city where we were born.
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/d824d69141050d83a7f65ba13dc7de948f7eeaaa-2738x1825.jpg?w=2400&amp;h=2400&amp;fit=max&amp;auto=format)
+
+A big milestone for basement—one that got us thinking: how can we share this moment with the rest of the world in a way that feels just right?
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/9737bef54de5caa441fb1f89f6396b0b393b2f02-4008x1915.jpg?w=2400&amp;h=2400&amp;fit=max&amp;auto=format)
+
+As we looked ahead to 2025, one of our key goals was to **redesign our website** into an extensible playground for experimentation — a place to test new technologies and creative boundaries.
+
+So, new office? New site? The cards were already on the table.
+
+## Nostalgic aesthetics
+
+The idea was simple: we wanted to recreate our office in 3D, but make sure it works very smoothly. As we kept tweaking the look, one version stood out fast — the PS2 style.
+
+It hit the sweet spot — it brought back all the nostalgia from the games we grew up with, and those old-school limitations actually helped us keep things lightweight and fast on the web.
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/b5ec14598cd833922e958899529a5735ce8003e5-856x565.gif)
+
+## The constraints
+
+Rendering an entire office in high-res 3D would’ve been heavy, especially for the web. Low-poly assets, compressed textures, and those old-school visual tricks made it way easier to keep things fast and lightweight. Still, we wanted to stay true to the aesthetic, so we asked ourselves: what pixel ratio feels authentic? How low can we go with textures? How many polygons are too many? Should we add dithering—and if so, where? These questions guided how we brought the whole thing to life, this was 100% experimental, error-proof.
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/df43456f5278a236431add55c46710199b59186a-967x544.png)
+
+When it came to lighting, we pivoted between ray-traced and flat plane textures with no lighting at all.
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/2a7b0018081e701df900112f6734ffb49fce9882-1738x974.png)
+
+We realized that we liked the smooth lighting from the realistic render, but we wanted it to perform as efficiently as possible. So we implemented light-maps.
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/a36f04bafd70fccb15d9b8e060620b085b1205f0-2060x1160.png)
+
+Light-maps bake lighting information into static textures, enabling realistic effects without requiring real-time calculations. A similar concept applies to ambient occlusion, which calculates how exposed each point in a scene is to ambient lighting, resulting in natural shadowing.
+
+Before and after the same scene when applying light-maps &amp; ambient occlusion, looks like magic, right? 
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/03f994535c6885fe04c82bac24c5eb136fcea361-3384x1906.png?w=2400&amp;h=2400&amp;fit=max&amp;auto=format)
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/bbd8bac829aafeb3c7214874764ee1d54e8250cf-3384x1906.png?w=2400&amp;h=2400&amp;fit=max&amp;auto=format)
+
+Even though the image above has realistic lighting, it is nothing more than textures:
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/0e4faf86d5381e2a7a60f4beff0e96794e3c5479-512x512.png)
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/d357cdfd5dd24d4e9a06c6580f5aab68e2ad5252-512x512.png)
+
+_Light-map and ambient occlusion textures for the same group of objects_
+
+To optimize rendering even further, we decided to create [our own shader material](https://github.com/basementstudio/website-2k25/tree/main/src/shaders/material-global-shader) that renders textures, reflections, and light-maps in an efficient &amp; aesthetic way. Actually, it was used by nearly every element in the scene. This was key to keeping the whole experience having a consistent look and feel.
+
+## Navigating the 3D office
+
+Our first idea was to divide the office into sectors and link each one to a page. 
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/a5de5de3c6374f1b2125fc3b363d4105bc59aa5d-1219x778.png)
+
+[Watch video](https://stream.mux.com/nmGYKo33jL02901uOEWIfbxfAz01hMXVSB7P7sDP1hPU01g.m3u8)
+
+During testing, opening a menu to change sections felt too slow. So we asked ourselves — why not let users simply click through the 3D environment instead? Yes, like classic point and click adventure games. 
+
+[Watch video](https://stream.mux.com/72UMI02RQ9pIMMqeJvDfvOVaEihUg01lcsVpNbhx100Ey4.m3u8)
+
+## Putting ourselves into the scene
+
+We had a problem — our office has people in it, and we wanted to capture that. So we started thinking: how could we include ourselves?
+
+We ended up scanning our faces to generate textures and models.
+
+To reduce loading time as much as possible, we combined all the faces into a single mesh and used morph targets to toggle between individuals.
+
+[Watch video](https://stream.mux.com/mIQjaSNPnfl02Um5DaAxeUGagA2yfehpZAuSiY021hy9w.m3u8)
+
+To optimize the rendering, we needed instanced meshes. However, since [Three](https://threejs.org/)[.js](https://Three.js) doesn’t support instanced skinned meshes, we had to build our own [implementation](https://github.com/basementstudio/website-2k25/tree/main/src/components/characters/instanced-skinned-mesh).
+
+## Inspecting everything
+
+We were looking for a way to incorporate references to our culture, projects, and passions. We concluded that the best approach was to scatter inspectable objects throughout the site.
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/1b3bea5fa6b1d9fd094ac0d229abb55f77d8b6e3-2946x1862.png?w=2400&amp;h=2400&amp;fit=max&amp;auto=format)
+
+Each inspectable object is configured in BaseHub, and has different properties. Having objects scattered around the office makes the space feel more alive.
+
+[Watch video](https://stream.mux.com/YGk2eJdq9L500gqlaDHGqiRWS1cLhMl1gyU01BV6HjAxg.m3u8)
+
+Of course, no retro vibe is complete without the right ambient music. We did our homework—and one of our developers actually composed all the tracks you hear in the office from scratch. You can check them out on the X below.
+
+[View tweet](https://twitter.com/i/web/status/1905624660407914522)
+
+## The Lab
+
+We wanted to showcase all of our experiments in a different way — not just as case studies or blog posts, but as playful, standalone experiences. That’s how the idea of the arcade was born: a space to archive our prototypes, tools, and internal experiments in a format that feels more like a game than a gallery.
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/c05aaa88fb1c2c5b7ec254aa432daf8ce3026158-2958x1306.png?w=2400&amp;h=2400&amp;fit=max&amp;auto=format)
+
+The color was inspired by those old amber screens and interface was something like a weird mix of MS-DOS and MSX Basic.
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/2dcb9256938b79147294e7f8919d03224667ab5e-1728x900.png)
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/136718e4817a96d1f10d71d59ce49d29f7c5def4-959x550.png)
+
+## The workflow
+
+### Storing our assets
+
+We use [BaseHub](https://basehub.com/) as a CMS — not just for the content itself, but also to manage everything related to our 3D scene, thanks to its versatile data structure capabilities.
+
+Every 3D model, every camera setup, and every special sound effect lives in the CMS — nothing is kept in the code repository.
+
+While the developers focused solely on solving technical implementation challenges, the 3D artists were able to iterate on the models as many times as needed, directly in the browser and in real-time, without involving development. It really felt magical.
+
+From a development standpoint, we saw ourselves as a sort of DevOps team for our artists — responsible for providing the tools and functionality that empowered them to work directly in the browser, giving them the freedom to iterate independently.
+
+[Watch video](https://stream.mux.com/3WW1fa01lN01K6sFcLyincKUeF31SCeEcU4II65mO702M00.m3u8)
+
+As we refined our workflow, we began to notice repetitive tasks and specific needs when preparing 3D models for web implementation. To optimize the process, we developed a series of custom tools with help from Cursor.
+
+These tools allow us to eliminate unnecessary attributes, clean up materials, generate UVs, and even retrieve the exact position of a point in coordinates compatible with [Three](https://threejs.org/)[.js](https://Three.js). All of this saves time and gives us greater control over the models we bring to the web.
+
+## One more thing, performance.
+
+### KTX
+
+To optimize the site as much as possible, we compressed the 3D textures using the [KTX](https://github.com/KhronosGroup/KTX-Software) format with the gltf-transform CLI tool. This compression, particularly with ETC1S mode, allowed us to significantly reduce file sizes without compromising much on visual quality. By the way, thanks to [@dghez_](https://x.com/dghez_) for generously sharing his knowledge on this technology — it helped us go deeper and optimize smarter.
+
+### Offscreen
+
+We didn’t want the main thread to choke during load, so we created a separate canvas to render the office as a wireframe while the main experience loads.
+
+[Watch video](https://stream.mux.com/jk00EHXTfa2hwU7Yyr1NsE2xonJfFTpUkxmjD902v02v2I.m3u8)
+
+On the other hand, we wanted to use a 3D model that could appear at any point on the screen and act as a contact us form, so we used a separate canvas as an overlay. We moved the rendering to an offscreen canvas to avoid compromising the main thread. It all adds up to a dual-layered experience that blends immersive 3D with structured 2D content.
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/8c8c246af0a0720c1bed7b83ce07d5ccd841292a-1356x752.gif)
+
+We’ll leave it here for now — but this is just the start. Up next, we’ll go technical into the hidden layers — the tricks, hacks, and workarounds that made it all possible, stay tuned.
+
+## Related Posts
+
+- [From Experiment to Framework: The Road to xmcp v1](https://basement.studio/post/from-experiment-to-framework-the-road-to-xmcp-v1.md) — 2026-08-25
+- [The Making of Shader Lab](https://basement.studio/post/the-making-of-shader-lab.md) — 2026-05-01
+- [Until: Giving Cryopreservation Its True Identity](https://basement.studio/post/until-giving-cryopreservation-its-true-identity.md) — 2025-12-04
+
+---
+
+[View all content](https://basement.studio/sitemap.md)</body>

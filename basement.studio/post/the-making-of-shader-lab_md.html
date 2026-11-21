@@ -1,0 +1,247 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="download_date" content="2026-11-21T07:57:28.815Z"/></head><body># The Making of Shader Lab
+
+**Author:** Tobias Moccagatta, Valentina Bearzotti
+**Published:** 5/1/2026
+**Categories:** Development, Laboratory
+
+---
+
+
+
+At basement, we’re always raising the bar and pushing the limits on what’s possible. That means we’re constantly experimenting, say motion, texture, typography, image treatment, and realtime visuals.  For that reason, we wanted a space where those explorations could happen faster and more freely.
+
+Many of our processes involve explorations, in which we gather information about the visual direction we should head to. We find ourselves building internal tools that would enable this collaboration between our design and development squads.
+
+In the era of personal software, almost anything is possible. As we developed and tested it internally, we realized it was something worth sharing. We take pride in what we build, and in an effort to encourage more people to do so, we’re embracing a more open approach—creating and sharing our work publicly.
+
+## Our Shader Lab
+
+After a month of development we decided to publicly release our latest tool that makes it easier to play around with shaders by creating, mixing and tweaking multiple layers.
+
+[View tweet](https://twitter.com/i/web/status/2043771441297150366)
+
+It’s been a real time saver for the team, especially during early explorations. Instead of coding ideas from scratch, we can quickly build and test them in the Lab. It also lets designers develop their ideas further without needing to code, helping to close the gap between concept and execution.
+
+## Hands on
+
+Start with a simple source, like a video layer or a custom shader sketch. From there, build the composition by stacking effects, refining the image, and shaping it into a more defined visual direction.
+
+[Watch video](https://stream.mux.com/UXgr8a1PdOfPqckU01Vjj2jHpMml02gpwzuRIPh9qzIvA.m3u8)
+
+Once the visual feels right, add motion directly in the timeline. A few keyframes are often enough to make the composition feel alive, without turning the process into a full animation workflow.
+
+[Watch video](https://stream.mux.com/pFegryKRlFVeh2q01sHuUMCV02mklU2rsP44QAhAbyRTc.m3u8)
+
+That package lets the same composition live inside a React app, either as its own rendered piece or as post-processing on top of an existing scene. 
+
+The workflow doesn’t stop at making the visual. It can also become part of the final product. Let’s try it with this composition: The goal was to roughly imitate a Star Wars’ holoprojector.
+
+![A holoprojector composition in Shader Lab](https://cdn.sanity.io/images/9syto90m/production/ca0f3a7d9587bef9d8d466dc046136efe34bf50a-3024x1964.png?w=2400&amp;h=2400&amp;fit=max&amp;auto=format)
+
+_A holoprojector composition in Shader Lab_
+
+With the composition saved, the `useShaderLab` hook exposes a `postprocessing` handle that hands the whole stack back to your scene as a single effect. The wiring is pretty straightforward:
+
+**scene.tsx**
+
+```tsx
+"use client";
+
+import { type ShaderLabConfig, useShaderLab } from "@basementstudio/shader-lab";
+import {
+  Canvas,
+  createPortal,
+  type DefaultRendererProps,
+  useFrame,
+  useThree,
+} from "@react-three/fiber/webgpu";
+import { useEffect, useMemo, useRef } from "react";
+import {
+  OrthographicCamera,
+  PerspectiveCamera,
+  Scene,
+  Texture,
+  WebGLRenderTarget,
+} from "three";
+import { float, mix, texture as tslTexture, uv, vec2 } from "three/tsl";
+import { MeshBasicNodeMaterial, WebGPURenderer } from "three/webgpu";
+
+// Your effect stack — exported from shader-lab's editor.
+// bloom → dithering → circuit-bent in this example.
+const shaderLabConfig: ShaderLabConfig = {
+  layers: [
+    /* ... */
+  ],
+  timeline: { duration: 8, loop: true, tracks: [] },
+};
+
+function HoloprojectorScene() {
+  const { gl, size } = useThree();
+  const renderer = gl as unknown as WebGPURenderer;
+
+  // ...Load the glb, make a solid copy with flatShading,
+  // and an `edge detect` looking copy with EdgesGeometry.
+
+  // Two scenes — one for each pass
+  const solidScene = useMemo(() =&gt; new Scene(), []);
+  const edgeScene = useMemo(() =&gt; new Scene(), []);
+  const camera = useMemo(() =&gt; new PerspectiveCamera(35, 1, 0.1, 50), []);
+  // (camera aspect updated on resize)
+
+  // ...Pavel's fluid sim runs on a hidden canvas. We expose its output as a
+  // CanvasTexture and use it as the reveal mask in the composite pass below.
+
+  // Three offscreen render targets: solid pass, edge pass, composite.
+  // (created/disposed in a useEffect on { size.width, size.height })
+  const solidRt = useRef<webglrendertarget |="" null="">(null);
+  const edgeRt = useRef<webglrendertarget |="" null="">(null);
+  const compositeRt = useRef<webglrendertarget |="" null="">(null);
+
+  // One orthographic camera, reused for the composite + screen fullscreen quads.
+  const quadCamera = useMemo(
+    () =&gt; new OrthographicCamera(-1, 1, 1, -1, 0, 1),
+    [],
+  );
+
+  // Composite scene: a fullscreen quad that mixes solid + edge using the
+  // fluid's luminance as the reveal mask.
+  const compositeScene = useMemo(() =&gt; new Scene(), []);
+  const compositeMaterial = useMemo(() =&gt; {
+    const flipped = vec2(uv().x, float(1).sub(uv().y));
+    const solidTex = tslTexture(new Texture(), flipped);
+    const edgeTex = tslTexture(new Texture(), flipped);
+    const fluidTex = tslTexture(new Texture(), uv());
+    const lum = fluidTex.rgb.x
+      .mul(0.299)
+      .add(fluidTex.rgb.y.mul(0.587))
+      .add(fluidTex.rgb.z.mul(0.114));
+    const m = new MeshBasicNodeMaterial();
+    m.colorNode = mix(solidTex.rgb, edgeTex.rgb, lum.clamp(0, 1));
+    return { material: m, solidTex, edgeTex, fluidTex };
+  }, []);
+
+  // Screen scene: a fullscreen quad that paints the final post-processed texture.
+  const screenScene = useMemo(() =&gt; new Scene(), []);
+  const screenTexture = useMemo(
+    () =&gt; tslTexture(new Texture(), vec2(uv().x, float(1).sub(uv().y))),
+    [],
+  );
+  const screenMaterial = useMemo(() =&gt; {
+    const m = new MeshBasicNodeMaterial();
+    m.colorNode = screenTexture.rgb;
+    return m;
+  }, [screenTexture]);
+
+  // Shader Lab's postprocessing handle
+  const { postprocessing } = useShaderLab(shaderLabConfig, {
+    renderer,
+    width: size.width,
+    height: size.height,
+  });
+
+  useEffect(() =&gt; {
+    postprocessing.resize(size.width, size.height);
+  }, [postprocessing, size.width, size.height]);
+
+  const t = useRef(0);
+  useFrame(
+    (_, delta) =&gt; {
+      t.current += delta;
+      const sRt = solidRt.current;
+      const eRt = edgeRt.current;
+      const cRt = compositeRt.current;
+      if (!(sRt &amp;&amp; eRt &amp;&amp; cRt)) return;
+
+      // Step the fluid sim and sync its CanvasTexture into the composite material
+      // compositeMaterial.fluidTex.value = fluidCanvasTexture
+
+      // Pass 1 — render the solid scene to render target A
+      renderer.setRenderTarget(sRt);
+      renderer.render(solidScene, camera);
+
+      // Pass 2 — render the edge scene to render target B
+      renderer.setRenderTarget(eRt);
+      renderer.render(edgeScene, camera);
+
+      // Pass 3 — composite both using the fluid as a mask, into render target C
+      compositeMaterial.solidTex.value = sRt.texture;
+      compositeMaterial.edgeTex.value = eRt.texture;
+      renderer.setRenderTarget(cRt);
+      renderer.render(compositeScene, quadCamera);
+
+      // Pass 4 — feed the composite into postprocessing, get the final texture back and paint it
+      if (postprocessing.ready) {
+        const out = postprocessing.render(cRt.texture, t.current, delta);
+        if (out) screenTexture.value = out;
+        renderer.setRenderTarget(null);
+        renderer.render(screenScene, quadCamera);
+      }
+    },
+    { phase: "render" },
+  );
+
+  return (
+    &lt;&gt;
+      {createPortal(
+        <mesh frustumculled="{false}">
+          <planegeometry args="{[2," 2]}="">
+          <primitive attach="material" object="{compositeMaterial.material}">
+        </primitive></planegeometry></mesh>,
+        compositeScene,
+      )}
+      {createPortal(
+        <mesh frustumculled="{false}">
+          <planegeometry args="{[2," 2]}="">
+          <primitive attach="material" object="{screenMaterial}">
+        </primitive></planegeometry></mesh>,
+        screenScene,
+      )}
+    
+  );
+}
+
+export function HermitVisual() {
+  return (
+    <canvas renderer="{async" (props:="" defaultrendererprops)=""> {
+        const r = new WebGPURenderer(
+          props as ConstructorParameters<typeof webgpurenderer="">[0],
+        );
+        await r.init();
+        return r;
+      }}
+    &gt;
+      <holoprojectorscene>
+    </holoprojectorscene></typeof></canvas>
+  );
+}
+```
+
+That’s the whole integration. Tweaking parameters from here means either jumping back into the Shader Lab webapp and re-exporting, or wiring the imported scene up to Leva (or whatever controls you prefer) and driving the uniforms yourself. Here it is running over our custom scene:
+
+[Watch video](https://stream.mux.com/6jMvS101i8VGZL00VuJQm7eMdwtzL01TRg9xa1PwTgbAhc.m3u8)
+
+## What’s to come
+
+We quickly saw a strong response from the community, which we’re genuinely grateful for.
+
+It’s been super exciting to see people take the tool in directions we hadn’t anticipated, exploring use cases we didn’t initially have in mind.
+
+[View tweet](https://twitter.com/i/web/status/2044122216376185291)
+
+[View tweet](https://twitter.com/i/web/status/2050298213970649583)
+
+[View tweet](https://twitter.com/i/web/status/2047699803606294640)
+
+The tool continues to evolve and is open for everyone to come and build with us in the process. Looking forward to the near future where we plan on adding a collaboration mode, keyframe interpolation, layer and masking groups,  and effect presets.
+
+As always, thanks to the community for the support. And remember to ship your experiments to the world.
+
+## Related Posts
+
+- [From Experiment to Framework: The Road to xmcp v1](https://basement.studio/post/from-experiment-to-framework-the-road-to-xmcp-v1.md) — 2026-08-25
+- [Whatever It Takes to Craft a Brand - Even a Long Flight](https://basement.studio/post/whatever-it-takes-to-craft-a-brand-even-a-long-flight.md) — 2025-07-15
+- [New Digital HQ — pt 1](https://basement.studio/post/new-digital-hq-pt-1.md) — 2025-05-20
+
+---
+
+[View all content](https://basement.studio/sitemap.md)</webglrendertarget></webglrendertarget></webglrendertarget></body>

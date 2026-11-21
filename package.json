@@ -1,0 +1,12 @@
+{
+  "name": "arena-studio",
+  "version": "1.0.0",
+  "description": "Arena Studio - Online Execution Studio",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "Sai Shiva Sanjeeth Paikarao",
+  "license": "ISC"
+}

@@ -1,0 +1,270 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="download_date" content="2026-11-21T07:57:28.815Z"/></head><body># Navigating the Future Within the Next.js App Router
+
+**Author:** Joaquín Montes, Agustín Segui
+**Published:** 1/29/2024
+**Categories:** Development
+
+---
+
+With every new paradigm shift, new patterns emerge. Dive into how we leverage the powerful Next.js App Router and avoid common mistakes.
+
+It has been a year since [Guillermo Rauch first announced the App Router paradigm at Next.js Conf](https://www.youtube.com/live/NiknNI_0J48?si=JN72QqdFramUGygh&amp;t=596) in SF. Despite the time that has passed, many web developers still find the App Router paradigm unfamiliar and challenging. I was in the same boat for a while.
+
+This post will discuss the challenges we faced when migrating to the App Router and introduce some new core concepts it brings to the Next.js development process. Our goal is to save you some headaches when experimenting with this not-so-new paradigm and, most importantly, encourage you to dive into what the Vercel team has brought to the game.
+
+&gt; **Note**
+&gt;
+&gt; This article isn't going to cover all aspects of the App Router. If you need a detailed guide, the Next.js documentation, which is improving steadily, is your go-to, alongside the awesome [Learn](https://nextjs.org/learn) experience that's been totally updated. In this piece, we'll discuss some challenges we've faced and the solutions we've come up with. This could be handy for you. We'll also highlight some important parts of the [official docs](https://nextjs.org/docs/app) that interest you.
+
+## Clarifying Misconceptions
+
+To avoid confusion, let's clear up a couple of misconceptions about the relationship between the App Router, Next.js features, and React.
+
+**Next.js 13 is not the App Router**
+
+While the App Router was first introduced with the release of Next.js 13, it's important to note that they are not coupled together. Next.js 13 (and subsequent ones) has its own updates, and you can use these features alongside the old, familiar Pages Router.
+
+**What do React Server Components actually do?**
+
+To make decisions about migrating to the new Next.js paradigm, we need to know that React Server Components (RSC) are integral to the new App Router paradigm. Server Components run server side and send just the results to the client, bypassing hydration and not adding their own weight (in terms of JS) to the client bundle. This can significantly reduce the overall bundle size of your application, especially as you add more and more components.
+
+## Leveraging RSC Benefits
+
+Many common tasks involving fetching data and performing server-side calculations, previously done in **`getStaticProps`** or **`getServerSideProps`**, can now be declared within the component itself. This simplifies the component's logic and provides more granular control over what should be static, revalidated, or blocked until fresh data is ready.
+
+What about using hooks and managing state? Then, you’d use a Client Component, of course! But it’s important to structure your components so that you can fully leverage RSC benefits and sprinkle in the interactivity without making your whole app `“use client"`. To that end, it's advisable to avoid using `client` components near the root level of your application (except for context and analytics providers) and your **`page.js`** files. This doesn't mean client components are bad; they are still suitable for handling state and user interactivity, but they’ll contribute to the overall JS bundle size you send to the client. This is key to thinking about your code architecture. Otherwise, you will have your entire application without leveraging RSC at all.
+
+## Don’t get lost across the component nesting
+
+How can I know when I’m working on the client or server side? If you are working on a very nested component, until you get used to the new mindset, you could have doubts about which of the two environments this component lives. There isn’t a clear and definitive way for all cases, but you can use a couple of alternatives to your advantage.
+
+1. The first and fastest one would be trying the old handy `console.log`. Is the result printed on the browser’s console? Then you’re client side. Otherwise, in development, if it’s printed on your terminal (where you ran your next.js app), then you’re on a server component.
+1. Another way is to use hooks. React, and by extension Next.js, won’t let you use them on a server component and will throw an error on your browser.
+
+## Seamless Pivot Between Both Environments
+
+Mastering both aspects within our team was key to adapting to this new paradigm. Let's explore some common use cases we faced along the journey:
+
+### How to nest RSC in Client Components
+
+Sometimes, you’ll have some code that could work fine as a Server Component, but it is inside a client component. Since we can’t [import server components into client components](https://nextjs.org/docs/app/building-your-application/rendering/composition-patterns#unsupported-pattern-importing-server-components-into-client-components), we need to create a ‘slot” by passing it as a prop using the React children prop:
+
+**code**
+
+```javascript
+// DON'T
+'use client'
+// This will be imported as a client component
+import ServerComponent from '...'
+
+const ClientComponent = () =&gt; {
+  return <servercomponent> 
+}
+```
+
+**code**
+
+```javascript
+// DO
+'use client'
+const ClientComponent = ({ children }) =&gt; {
+  useEffect(() =&gt; {
+    // some client logic
+  }, [])
+
+  return (
+    <div>
+      {children}
+    </div>
+  );		
+}
+```
+
+**code**
+
+```javascript
+// DO
+import ClientComponent from "./ClientComponent";
+import ServerComponent from "./ServerComponent";
+
+// Pages are Server Components by default
+export default function Page() {
+  return (
+    <clientcomponent>
+      <servercomponent>
+    </servercomponent></clientcomponent>
+  );
+}
+```
+
+&gt; **Note**
+&gt;
+&gt; To dive deep further into this, we encourage you to take a look at the [App Router Migration Guide](https://nextjs.org/docs/app/building-your-application/upgrading/app-router-migration) from Next.js 
+
+### Moving interactive logic down the tree
+
+Something common on the old pages router was wrapping the main content under Providers and running some global hooks, analytics, etc., on the `_app.tsx` file. Now, we keep our `layout.tsx` file as an RSC and import client components from `providers.tsx`. This way, we ensure not to send all the component JavaScript of the layout to the client.
+
+**Before (Pages Router)**
+
+**code**
+
+```javascript
+// ~/pages/_app.tsx
+import '~/css/global.scss'
+// ...imports
+
+/* CUSTOM APP */
+
+const App = ({ Component, pageProps, ...rest }: AppProps) =&gt; {
+  useGoogleAnalytics()
+
+  const getLayout: GetLayoutFn =
+    (Component as any).getLayout ||
+    (({ Component, pageProps }) =&gt; <component {...pageprops}="">)
+
+  return (
+    &lt;&gt;
+      
+        <appscripts>
+      
+      <segmenttrackerprovider>
+        <segmentpagechange>
+        {getLayout({ Component, pageProps, ...rest })}
+      </segmentpagechange></segmenttrackerprovider>
+    
+  )
+}
+
+const SegmentPageChange = () =&gt; {
+  const { analytics } = useSegment()
+  const { asPath } = useRouter()
+
+  React.useEffect(() =&gt; {
+    analytics?.page()
+  }, [analytics, asPath])
+
+  return null
+}
+
+/* APP HOOKS */
+
+const useGoogleAnalytics = () =&gt; {
+  React.useEffect(() =&gt; {
+    // Some client logic, e.g.: using event listeners or router events
+  }, [])
+}
+
+/* EXPORT */
+
+export default App
+```
+
+**After (App Router)**
+
+**code**
+
+```javascript
+// ~/app/layout.tsx
+import '~/css/global.scss'
+
+// ...imports
+import { AppProviders } from './providers'
+
+/* CUSTOM APP */
+export const metadata = { title: 'Meilisearch' }
+
+export default function RootLayout({
+  children
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    
+      
+        <appproviders>
+          {children}
+        </appproviders>
+      
+    
+  )
+}
+```
+
+**code**
+
+```javascript
+// ~/app/providers.tsx
+'use client'
+//...imports
+
+export const AppProviders = ({ children }: { children: React.ReactNode }) =&gt; {
+  useGoogleAnalytics()
+  const { analytics } = useSegment()
+  const pathname = usePathname()
+
+  React.useEffect(() =&gt; {
+    analytics?.page()
+  }, [pathname, analytics])
+
+  return (
+    &lt;&gt;
+      <toaster visibletoasts="{1}">
+      <segmenttrackerprovider>
+        <themeprovider disabletransitiononchange="" defaulttheme="dark">
+          {children}
+        </themeprovider>
+      </segmenttrackerprovider>
+    
+  )
+}
+```
+
+&gt; **Note**
+&gt;
+&gt; You can define multiple "use client" entry points in your React Components Tree. This allows you to split your application into multiple client bundles (or branches). However,&nbsp;"use client"&nbsp;doesn't need to be defined in every component that needs to be interactive. Once you define the boundary, all child components and modules imported into it are considered part of the client bundle. — Next.js Documentation
+
+## Real-World Use Cases
+
+Alright, let's take a look at a few examples within basement.studio where the App Router really made a difference because of its capabilities:
+
+[Meilisearch documentation](https://meilisearch.com/docs): This documentation is loaded from mdx remote files that should be transformed into HTML. App Router, alongside next-mdx-remote, allowed us to do this expensive transformation in the server and send the client just the HTML, without the need to import a lot of JavaScript code like the one react-markdown uses on the client.
+
+Another big win on this project was handling the big load of syntax highlighting calculations on the server. Syntax highlighting libraries can be very heavy to bundle, so keeping them on the server is better. This way we saved 95% of the bundle size.
+
+[BaseHub](https://basehub.com/): In this case, the entire web application used the App Router from scratch, and alongside caching, edge runtime, and other features, it enables a blazingly fast experience where every navigation has some initial data that syncs to the server asynchronously.
+
+## Understanding The App Router Caching
+
+First, it's important to understand that Next.js will try to cache as much as possible to boost performance and minimize costs. As a result, routes are statically rendered, and data requests are cached unless you decide to opt out through additional configurations. In the RSC environment, when a build is executed, the default setting pre-renders pages (and [route handlers](https://nextjs.org/docs/app/building-your-application/routing/route-handlers)). Now, let's explore how to deal with fresh data.
+
+A nice thing we’ve found is that caching features turned out to be more granular when you opt-in to dynamic rendering. We were used to managing multiple fetch functions that passed through a prop with shared settings.
+
+Now, the "one **`getStaticProps`** to rule them all" approach was superseded by a new paradigm that allowed us to handle data fetching at the component level. This gave us the ability, for instance, to establish unique revalidation for each component separately.
+
+Caching on Next.js is an evolving paradigm right now. It appears to be moving towards a more defined structure. However, there are ongoing discussions about the use of polyfills and custom utilities that the framework extends from the conventional Web APIs. Finding a good balance between exposing new features and abstractions while sticking to Web Standards is not as easy as it sounds. However, having the option to choose is something we see as a promising sign. As we were writing this, [this great in-depth overview](https://youtu.be/VBlSe8tvg4U) was released with the current state of the App router cache, and we highly recommend a dive deep into elements like **`revalidateTag`**.
+
+## Conclusions
+
+Transitioning from Pages to App Router might be a bit of a hurdle, as it requires adapting to new paradigms that often accompany such progressive leaps. That said, it does present the potential for significantly reducing the client bundle and offering precise control over data fetching.
+
+Since you can gradually introduce some of its key features, we're now incorporating them into nearly all our new projects while also migrating some existing ones that could benefit from it. Before fully committing to the App Router, we'd really like to see a robust solution for managing page transitions - something we're currently handling in the Pages Router environment. We're excited to see what the future holds this year, so keep an eye out - we'll definitely share more insights as we continue our learning journey.
+
+## Further Resources
+
+- [How to incrementally implement App Router](https://nextjs.org/docs/app/building-your-application/upgrading/app-router-migration)
+- [Common mistakes on App Router](https://www.youtube.com/watch?v=RBM03RihZVs)
+- [https://nextjs.org/learn](https://nextjs.org/learn)
+- [Why I’m using Next.js — Lee Robinson](https://leerob.io/blog/using-nextjs)
+- [App Router Training](https://nextjs-app-router-training.vercel.app/) by [Hiroppy](https://hiroppy.me/)
+- Looking for some Spanish content? Our friend [Goncy](https://twitter.com/goncy) has always been creating really good tutorials, interviews, and workshops. [Check them out](https://next.goncy.dev)!
+
+## Related Posts
+
+- [From Experiment to Framework: The Road to xmcp v1](https://basement.studio/post/from-experiment-to-framework-the-road-to-xmcp-v1.md) — 2026-08-25
+- [The Making of Shader Lab](https://basement.studio/post/the-making-of-shader-lab.md) — 2026-05-01
+- [Whatever It Takes to Craft a Brand - Even a Long Flight](https://basement.studio/post/whatever-it-takes-to-craft-a-brand-even-a-long-flight.md) — 2025-07-15
+
+---
+
+[View all content](https://basement.studio/sitemap.md)</toaster></appscripts></component></servercomponent></body>

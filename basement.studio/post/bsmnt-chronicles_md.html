@@ -1,0 +1,158 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="download_date" content="2026-11-21T07:57:28.815Z"/></head><body># BSMNT Chronicles
+
+**Published:** 7/7/2023
+**Categories:** Case Study
+
+---
+
+Inspired by retro gaming, we created *Basement Chronicles*, a browser-based point-and-click game that blends nostalgia with modern tech. What began as an exploration evolved into a creative journey, uncovering new ideas and talents along the way.
+
+Here at [basement](https://basement.studio/), we are fueled by nostalgia. A while ago, we started exploring new tools to make an immersive experience, and before we knew it, we were hooked on creating a retro, pixelated point-and-click game right on the browser.
+
+Through our [laboratory](https://basement.studio/lab), we often venture into creative explorations to unearth valuable gems. On this project, we uncovered new approaches and unlocked hidden talents within our team. We're thrilled with the results and can't recommend the process enough. But we're not stopping there. We embarked on this journey not just for ourselves but to share our findings. So, get ready to delve into our discoveries.
+
+## **Envisioning Chronicles**
+
+Let's dive into the conceptualization phase to capture the essence of our journey. This tale is about reverse engineering everything - from the initial pencil and paper sketches to the final 3D render on the browser. We traversed through numerous phases along the process, each influencing the next and the previous. Every decision we made had a domino effect, so we tread carefully.
+
+![Theodoro’s drafts figure asset](https://cdn.sanity.io/images/9syto90m/production/23c732ebe6c832f8ea4bbf50bdf5f1d34e8d60ef-824x568.jpg)
+
+_Theodoro’s drafts figure asset_
+
+We started by brainstorming a script, putting together a mood board, and crafting a main storyboard, all based strictly on our character dialogues. Worth mentioning is that this story does feature characters from our PC game, Looper. Thus, you can think of this project as an exciting extension of that original narrative and lore.
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/5b75ee60e206caf120d220f29ab7e2942073acf7-1080x720.png)
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/54c3509aab237f73c6aa921497333a985c611e9d-1080x720.png)
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/e287919743c93aa052127d1eb0e29c75fb0846fc-1080x720.png)
+
+![Image](https://cdn.sanity.io/images/9syto90m/production/9b999f36a8a10123c2e05584e9efb5e2cebaa82b-1080x720.png)
+
+&gt; Every decision we made had a domino effect, so we tread carefully.
+&gt;
+&gt; — Juan Lautaro Martín, Head of 3D at basement.studio
+
+When we went for the production process, we first transformed our hand-painted concept scenes into 3D models to set some boundaries. Next, we used AI to refine the overall look and feel. Using [Leonardo](https://leonardo.ai/), we curated a roundup based on multiple output iterations. Finally, we returned to Photoshop to fine-tune the assets and prepare them for the next phase.
+
+![Generative process figure asset](https://cdn.sanity.io/images/9syto90m/production/6b9b1a91299e18f28725f82d686617c66675b8ac-824x568.jpg)
+
+_Generative process figure asset_
+
+## **Fake It Till You Make It**
+
+Okay, this is where we hit some serious challenges: We had to juggle a wide range of assets, from rigged 3D models, 2D sprite sheet animations, static PNGs, shaders, bezier curves, and more. The question was, how could we seamlessly merge all of these elements in a single scene?
+
+We were tasked with filling the canvas with a polished, final view. After testing several approaches and struggling to handle element superposition, we decided to tackle a challenging approach: Create a low-poly perspective projection for all scenes and place all elements within it.
+
+![Working on perspective projection figure asset](https://cdn.sanity.io/images/9syto90m/production/6fcfdcd5bf867815f6cb298368f76cd5ba1f4fe7-1080x718.jpg)
+
+_Working on perspective projection figure asset_
+
+We couldn't just present our scene as it came. Therefore, we projected it onto a plane to give it a normalized look for the viewer. This kind of 3D scenography involves clever tricks to create a convincing view from the camera's perspective.
+
+If you take a closer look at the scene from different points, you'll notice some intentional proportional aberrations, similar to what you might see in games. For instance, from the camera viewpoint, a character might appear to be interacting with the laptop, even though he’s not directly in front of it. It's similar to the optical illusion tourists experience [taking photos at the Leaning Tower of Pisa](https://www.google.com/search?q=tower+of+pisa+photos&amp;rlz=1C5CHFA_enES1069ES1069&amp;oq=tower+of+pisa+photo&amp;gs_lcrp=EgZjaHJvbWUqBwgAEAAYgAQyBwgAEAAYgAQyBggBEEUYOTIHCAIQABiABDIICAMQABgWGB4yCAgEEAAYFhgeMggIBRAAGBYYHjIICAYQABgWGB4yCAgHEAAYFhgeMggICBAAGBYYHjIICAkQABgWGB7SAQgzMjIyajBqN6gCALACAA&amp;sourceid=chrome&amp;ie=UTF-8).
+
+![First stage, the bunker room figure asset](https://cdn.sanity.io/images/9syto90m/production/9cef6f68915939e749ca5915d12bfd96fa052f7b-1080x718.jpg)
+
+_First stage, the bunker room figure asset_
+
+By doing this, we could position some elements closer to the camera and keep them in the same structure as the overall environment. We set different layers for the landscape and the foreground, putting the characters in between. The result? A seamless parallax experience that reacts to mouse movement and camera position, perfectly blending all elements of the experience.
+
+[Watch video](https://stream.mux.com/txM5169V00DuXC2qRUBGs4AqcuADvtdy500j1cVOHDHDA.m3u8)
+
+## **The Devs Enter The Game**
+
+The development team had many things to tackle. We needed to implement post-processing effects for the final render and manage the camera for perspective projection, and, oh boy, we had to build a system to debug this complex stream of visual assets, right?
+
+[Watch video](https://stream.mux.com/UfxUOexdwf5401DRvl7dfBkbWH7PNsyRk02tlfavC6t00I.m3u8)
+
+Okay, we kicked things off with a critical decision: creating a filter to fuse our array of layers together on screen. Since we knew we'd be using post-processing, we had to nail this down early as it would impact all other assets, such as resolution, size, and color depth.
+
+&gt; Since we knew we'd be using post-processing, we had to nail this down early as it would impact all other assets.
+&gt;
+&gt; — Nazareno Oviedo, Creative Developer
+
+[Watch video](https://stream.mux.com/ZsyEl01NIkB42pg7eyR6pNQknqXtXjP7BbUOeqASlHmI.m3u8)
+
+We chose pixelated dithering with an indexed color encoding of 64 reduced values. This meant getting to grips with some math and learning to implement a custom dithering effect. We then crafted a shader where each pixel is roughly 3x3. This approach achieved our desired nostalgic aesthetic and helped us set a file size limit for optimal performance.
+
+And guess what? This process reshaped the overall output again, which meant we had to start building some browser tools for testing. Let's see!
+
+**Orchestrating On The Browser**
+
+Alright, we've reached the point where we realized we're essentially building 3D software right in the browser. Let's talk about the debug mode and how we took it up a notch.
+
+[Watch video](https://stream.mux.com/FKK1cMa005qXIxcP8TXXtw7PMgu00JAsix3Ch01kBV01iBk.m3u8)
+
+We kicked off with a dedicated branch for post-processing and scene arrangements, so we weren't shooting in the dark. We set up a dashboard of easily accessible helpers under a UI for the team, saving us much time.
+
+Take, for example, an easily accessible toggle for activating an orbit controls instance. Setting the ability to save it to local storage, even on refresh, spared us from manually creating it every time we needed to debug our multiple scenes.
+
+&gt; We're essentially building 3D software right in the browser.
+&gt;
+&gt; — Matías Perez, Creative Developer
+
+![Big asset](https://cdn.sanity.io/images/9syto90m/production/5317ebe087010f7fe9f87ef58ebbb7893e482a35-1920x1080.jpg)
+
+_Big asset_
+
+Another handy trick was leveraging [Yomotsu's camera controls](https://www.notion.so/Solana-com-Tweetstorm-6b43507766ae48f998bcffff299569db?pvs=21) from the R3F Drei library to build our camera system. This saved our devs from setting views manually and solved many complex geometry calculations.
+
+Seems cool, huh? Wanna test this debugging experience? Just head over to [`/?debug=true`](https://chronicles.basement.studio/?debug=true). You can even play the entire game in this mode. It’d be like choosing the 'hard mode.'
+
+## **More Dev Challenges**
+
+We faced some intriguing challenges beyond just debugging. For instance, syncing the GSAP and R3F timers was tough. We found out that the GSAP clock stops when tweens aren’t running for a while. But what if you need that timer for something else? Well, we had to adjust the autosleep configuration and synchronize it with our WebGL ticker. This allowed us to run some background shaders without any freezes.
+
+![Big asset](https://cdn.sanity.io/images/9syto90m/production/3947e0fd60268a923a049ac07e3d0590c4c56eaf-1920x1080.jpg)
+
+_Big asset_
+
+Another big challenge was programming the point-and-click behavior. We created a hook named 'useStory' to keep events and states in sync, encapsulating our logic in a scalable way. Drawing inspiration from GSAP timelines, we built a system rooted in a promise chain. This approach strictly maintained the order of the story sequence. As certain promises, like a character's dialog, were fulfilled by user interaction, they would unlock subsequent elements in the game.
+
+And lastly, we also had a blast revisiting some of our previous experiments from the basement laboratory. You can spot our [bezier curve toolset](https://lab.basement.studio/experiments/49.bezier-import.js) in action to run Theodoro's walking animation path and again in the trajectory of the flying birds.
+
+## **No 16-Bit Music, No Retro Game!**
+
+We knew we couldn't deliver anything retro without a killer low-bit soundtrack. That's why we brought [Mauro](https://soundcloud.com/mauro-javier-romero) into a dedicated pod for music production and SFX. We aimed for an SNES vibe with the music, so creating directly in MIDI and working in 16-bit seemed like a dream.
+
+Though this approach kept the file size light, it posed a problem: playing MIDI in the browser required loading the sound library, which, in our case, weighed in at around 17 MB. To tackle this, we had to sample all the sounds to MP3 to make them accessible.
+
+Now, with our soundtrack downsized to a user-friendly 3 MB, why not head over to [SoundCloud](https://soundcloud.com/bsmntstudio/sets/basement-chronicles?si=c6054f81e11d406aa462096e243c4e61&amp;utm_source=clipboard&amp;utm_medium=text&amp;utm_campaign=social_sharing) and give it a spin?
+
+![Official Poster figure asset](https://cdn.sanity.io/images/9syto90m/production/69960cdde5a10af41f400d2573149964e03317b8-1229x848.jpg)
+
+_Official Poster figure asset_
+
+But our sound design journey didn't stop there. What about dialogues? We leveraged [Eleven Labs](https://elevenlabs.io/) voice technologies to iterate and polish Theodoro's voice. We generated a bunch of variants by adjusting pitch and velocity until we hit the right tone.
+
+Much like our visual processing with AI, having numerous outputs to curate from helped us find what best resonated with our human senses. As for Patas’ voice, we twisted the real script until we achieved a robotic sound wave that could resemble our beloved R2D2.
+
+## **Tech Stack**
+
+Creating a game for the browser comes with its fair share of interesting challenges and demands a diverse toolkit. We particularly enjoyed testing cutting-edge tech like AI. Our creative flow primarily involved tools like Figma, Photoshop, and Blender, while we relied on Leonardo AI and Eleven Labs for AI generative processing. On the development front, we can't sing enough praises for our favorites: React Three Fiber with Drei and PostProcessing, Three.js, GSAP, Next.js, and Vercel.
+
+![2D sprite sheet animations figure asset](https://cdn.sanity.io/images/9syto90m/production/b13da19ad7d5e1c0040a07bdbaffa11da162a3a0-1229x848.jpg)
+
+_2D sprite sheet animations figure asset_
+
+## **A Pixelated Tribute**
+
+Now, what have we accomplished so far in a single website? These chronicles go beyond Theo and Patas. Here, you'll find trained AI using our own artwork painted in Photoshop and then projected onto a perspective plane. You'll also spot classic 2D sprite sheet animation techniques coexisting with intricate 3D models and rigs.
+
+![Character hand concepts figure asset](https://cdn.sanity.io/images/9syto90m/production/84b3b8201712417dc117523ff0d7b3c5805219be-1229x848.jpg)
+
+_Character hand concepts figure asset_
+
+Enjoy a seamless experience with clever loading states, cool retro music produced in-house, and a complete JavaScript game to defeat the final boss. And to top it all off, this magic is presented in a super cool pixelated output that steals our nostalgic hearts. We hope you can feel the vibes we had when creating this. We’re just eager for more tributes to those games that shaped our childhood.
+
+## Related Posts
+
+- [Until: Giving Cryopreservation Its True Identity](https://basement.studio/post/until-giving-cryopreservation-its-true-identity.md) — 2025-12-04
+- [Whatever It Takes to Craft a Brand - Even a Long Flight](https://basement.studio/post/whatever-it-takes-to-craft-a-brand-even-a-long-flight.md) — 2025-07-15
+- [Scaling Vercel: Years of Building, Refining, and Elevating](https://basement.studio/post/scaling-vercel-years-of-building-refining-and-elevating.md) — 2025-02-18
+
+---
+
+[View all content](https://basement.studio/sitemap.md)</body>

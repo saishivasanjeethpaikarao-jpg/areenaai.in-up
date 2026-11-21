@@ -1,0 +1,129 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="download_date" content="2026-11-21T07:57:28.815Z"/></head><body># Building a Unique Website for Basement Grotesque
+
+**Published:** 12/12/2021
+**Categories:** Development, Design
+
+---
+
+A look behind the scenes of the website built for Basement Grotesque, the open-source typeface of basement.studio.
+
+Basement Grotesque is one of basement studio’s first self-initiated projects. We wanted to create a typeface tailored to the studio’s visual language. It became the perfect excuse to show it off with a website that could suit its inherent bold and striking style.
+
+[Watch video](https://stream.mux.com/nKtGLR4ERyDD558kRDufNq67U01oth21rVGOFvRWa009w.m3u8)
+
+## The Beginnings
+
+Our design team had just redesigned the studio’s identity. For the wordmark, instead of using an existing font, we decided to draw each of the characters in an effort to capture the distinct voice and style of the studio. Once we had drawn those final seven letters (and the period sign), it seemed only natural to expand them to a full-fledged bespoke font. That was the beginning of Basement Grotesque.
+
+From then on, our task was fairly clear: we had to create a strong typeface, suitable for large headings and titling, and it had to be bold. Inspired by the specimens of grotesque typefaces of the early 19th century, and combining them with the renewed brutalist aesthetics of the contemporary visual landscape, Basement Grotesque would become our first venture into the daunting world of type design. We weren’t just designing and releasing a new font; we were on the journey of learning a new craft by doing.
+
+Coincidentally, the studio had established quarterly hackathons to devote specific time and space to develop self-initiated projects where the whole team would get together, work on and ship anything we wanted to explore and test that wouldn’t normally be possible with client work. After some brainstorming, the first project chosen for our first hackathon was the site to launch and share our first typeface. Again, it just felt like a natural decision.
+
+&gt; This font is really the result of a creative itch we wanted to scratch a long time ago. We took on the challenge and now we have a growing typeface, open and available to anyone who wants to use it.
+&gt;
+&gt; — Andres Briganti, Head of Design
+
+## The Process
+
+Once the goal was set, the challenge was to finish at least one weight of the typeface and then make a website to promote it and its future additions. We had to do something captivating so that it would motivate our community to use it and share it.
+
+The font quickly reached a stage where it was advanced enough to be released. Part of the appeal of the project was the idea of creating something that was an ongoing effort and a work in progress. New weights and widths, and even revisions and updates would become available and open to the public as time goes by.
+
+Starting with the Black Weight (800), each character was carefully designed to convey the studio’s visual style, and some of the features of the current version are:
+
+- 413 unique glyphs
+- 14 discretionary ligatures
+- Bold, our voice and tone, of course
+- Old style and lining figures
+- Language support for Western and Central European languages
+
+![hamburgerfontsiv](https://cdn.sanity.io/images/9syto90m/production/6181b7e114ff65abc92dd001ab5e718d0fcd45fc-1536x751.png)
+
+_hamburgerfontsiv_
+
+![base structure](https://cdn.sanity.io/images/9syto90m/production/88790a6d6f0a75c7b459bb0624a50f2f95318982-1536x564.png)
+
+_base structure_
+
+![uppercase test](https://cdn.sanity.io/images/9syto90m/production/db2348f70d2429106dca8edd30319d34621c8da8-1536x596.png)
+
+_uppercase test_
+
+## Create, Develop and Show Off
+
+With the font in hand, we now had to build a website to present it. It had to be interactive enough to show the typeface’s features, but also feel solid and performant.
+
+The preferred tech stack at basement is [Next.js](https://nextjs.org/) with [TypeScript](https://www.typescriptlang.org/). Having those as basics, we then chose [GSAP](https://greensock.com/gsap/) for animations, [Stitches](https://stitches.dev/) for CSS-in-JS, and [Locomotive Scroll](https://github.com/locomotivemtl/locomotive-scroll) for better scrolling experiences — among other libraries. We started from a template repository, [next-typescript](https://github.com/basementstudio/next-typescript), for faster development.
+
+![Poster mockup](https://cdn.sanity.io/images/9syto90m/production/fc0639137c4f4352459144b964f4545abb5476a5-1536x836.png)
+
+_Poster mockup_
+
+&gt; We worked on a tight deadline, and the team really delivered. Each of us worked on a specific section, and then we arranged everything together to get to the final result.
+&gt;
+&gt; — Julián Benegas,  Head of Development
+
+The repository was made open-source, so feel free to fork and play around with it: [https://github.com/basementstudio/basement-grotesque.](https://github.com/basementstudio/basement-grotesque)
+
+## Interesting Code Challenges
+
+1) In the “Try this beauty” section, we have an interactive preview, where you can adjust the font size, leading, and tracking, to see how it looks. We had to create a `ResizableTextarea` component to solve some spacing issues. The `syncHeights` function synced the height of a placeholder `div` with the actual `textarea` node. A bit hacky!
+
+**code**
+
+```typescript
+1 function syncHeights(textarea: HTMLTextAreaElement, div: HTMLDivElement) {
+2 const value = textarea.value.replace(/\n/g, '<br>')
+3 div.innerHTML = value + '<br style="line-height: 3px;">'
+4 div.style.display = 'block'
+5 textarea.style.height = div.offsetHeight + 'px'
+6 div.style.display = 'none'
+7 }
+```
+
+Full [source here](https://github.com/basementstudio/basement-grotesque/blob/master/src/components/primitives/resizable-textarea.tsx).
+
+2) On the footer, we used the 2d physics library [p2.js](https://github.com/schteppe/p2.js) to get that cool “falling letters” animation. The code is a bit long, but please, feel free to [follow the source from here](https://github.com/basementstudio/basement-grotesque/blob/master/src/components/layout/footer/index.tsx).
+
+3) We integrated with Twitter’s API to get and render tweets hashtagged `#basementgrotesque` on the website. On the download flow, we suggested that users tweet something to show some love 🖤
+
+**code**
+
+```typescript
+1 const handleDownload = useCallback(() =&gt; {
+2 const encoded = {
+3 text: encodeURIComponent(
+4 'I’m downloading the #basementgrotesque typeface, the boldest font I’ll ever use on my side-projects. Thank you guys @basementstudio 🏴 Get it now: https://grotesque.basement.studio/'
+5 )
+6 }
+7 window.open(
+8 `https://twitter.com/intent/tweet?text=${encoded.text}`,
+9 '_blank'
+10 )
+11 download(
+12 encodeURI(location.origin + '/BasementGrotesque-Black_v1.202.zip')
+13 )
+14 }, [])
+```
+
+Full [source here](https://github.com/basementstudio/basement-grotesque/blob/07dc509fce86e99c6119648c90e760967536cb89/src/components/layout/header/index.tsx#L124).
+
+## The Results
+
+See it for yourself: [https://grotesque.basement.studio/](https://grotesque.basement.studio/).
+
+The code is open-source: [https://github.com/basementstudio/basement-grotesque](https://github.com/basementstudio/basement-grotesque).
+
+&gt; **Note**
+&gt;
+&gt; This article was originally published on [Codrops](https://tympanus.net/codrops/2021/12/13/case-study-a-unique-website-for-basement-grotesque).
+
+## Related Posts
+
+- [From Experiment to Framework: The Road to xmcp v1](https://basement.studio/post/from-experiment-to-framework-the-road-to-xmcp-v1.md) — 2026-08-25
+- [The Making of Shader Lab](https://basement.studio/post/the-making-of-shader-lab.md) — 2026-05-01
+- [Until: Giving Cryopreservation Its True Identity](https://basement.studio/post/until-giving-cryopreservation-its-true-identity.md) — 2025-12-04
+
+---
+
+[View all content](https://basement.studio/sitemap.md)</body>
