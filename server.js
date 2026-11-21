@@ -56,6 +56,11 @@ function resolveFile(pathname) {
     searchCandidates.push(path.join(ROOT_DIR, cleanPath));
   }
 
+  // If path starts with static/ (Next.js Turbopack workers and chunks without _next prefix)
+  if (cleanPath.startsWith('static/')) {
+    searchCandidates.push(path.join(BASE_DIR, '_next', cleanPath));
+  }
+
   // If path starts with basement.studio
   if (cleanPath.startsWith('basement.studio/')) {
     searchCandidates.push(path.join(ROOT_DIR, cleanPath));
